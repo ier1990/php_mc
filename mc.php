@@ -10,6 +10,25 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 //include "login.php";
 
+function perm($stat){
+    $file_perm = ($stat['mode'] & 0x1000) ? 'd' : '-';
+    $file_perm .= ($stat['mode'] & 0x0100) ? 'r' : '-';
+    $file_perm .= ($stat['mode'] & 0x0080) ? 'w' : '-';
+    $file_perm .= ($stat['mode'] & 0x0040) ?
+        (($stat['mode'] & 0x0800) ? 's' : 'x' ) :
+        (($stat['mode'] & 0x0800) ? 'S' : '-');
+    $file_perm .= ($stat['mode'] & 0x0020) ? 'r' : '-';
+    $file_perm .= ($stat['mode'] & 0x0010) ? 'w' : '-';
+    $file_perm .= ($stat['mode'] & 0x0008) ?
+        (($stat['mode'] & 0x0400) ? 's' : 'x' ) :
+        (($stat['mode'] & 0x0400) ? 'S' : '-');
+    $file_perm .= ($stat['mode'] & 0x0004) ? 'r' : '-';
+    $file_perm .= ($stat['mode'] & 0x0002) ? 'w' : '-';
+    $file_perm .= ($stat['mode'] & 0x0001) ?
+        (($stat['mode'] & 0x0200) ? 't' : 'x' ) :
+        (($stat['mode'] & 0x0200) ? 'T' : '-');
+    return $file_perm;
+}
 /************************************************/
 /*   */
 /************************************************/
@@ -50,7 +69,6 @@ $mc_array['DOCUMENT_ROOT'] = $_SERVER['DOCUMENT_ROOT']; // /var/www/html
 /************************************************/
 /* GET Variables  */
 /************************************************/
-
 $mc_array['dir'] =   (isset($_GET['dir'])) ? $_GET['dir'] : getcwd();
 $mc_array['view'] = (isset($_GET['view'])) ? $_GET['view'] : false;
 $mc_array['tpage'] =  (isset($_GET['tpage'])) ? $_GET['tpage'] : false;
@@ -58,12 +76,12 @@ $mc_array['tpage'] =  (isset($_GET['tpage'])) ? $_GET['tpage'] : false;
 /************************************************/
 /*  Figure out new dir_path */
 /************************************************/
-
 $mc_array['dir'] = realpath($mc_array['dir']);
-if($mc_array['dir']	== false) {$mc_array['dir'] = getcwd();}
-$mc_array['dir_path'] = $mc_array['dir'] . '/';  
-
-
+if ($mc_array['dir'] === false) {
+    $mc_array['dir'] = getcwd();
+}
+$mc_array['dir_path'] = $mc_array['dir'] . '/';
+$mc_array['dir_path'] = str_replace('//', '/', $mc_array['dir_path']);
 
 /************************************************/
 /*  Figure out HTTP or HPPTS */
@@ -79,8 +97,11 @@ if (isset($_SERVER['HTTPS']) &&
 else {
   $protocol = 'http://';
 }
-$mc_array['protocol'] = $protocol; 
+$mc_array['protocol'] = $protocol;
 
+
+$self = str_replace($mc_array['DOCUMENT_ROOT'] , '',$_SERVER['PHP_SELF'] );
+$mc_array['self'] = $self;
 
 /************************************************/
 /*  Start Header */
@@ -122,27 +143,35 @@ $mc_array['protocol'] = $protocol;
 
 <div class="medium" style="overflow:scroll; overflow-x:hidden; height:50%;">
     <?php
+    //📝💾📁▶️
     $directories = array_diff(scandir($mc_array['dir_path']), $mc_array['exclude_list']);
+    echo '<h4>Classic PHP File Commander - <a href="'. $protocol . $mc_array['HTTP_HOST'] . $mc_array['self'] . '" >' . $mc_array['HTTP_HOST'] . '</a></h4>';
+    echo 'Directory: ' . $mc_array['dir_path'] . '';
     echo '<ul style="list-style:none;padding:0">';
+
+    //up directory
     echo '<li style="margin-left:1em;">.. 
     <a href="?tpage=' . $mc_array['tpage'] . '&dir=' . dirname($mc_array['dir_path']) . '">💾 up</a></li>';
-    //📝💾📁▶️
+
     foreach ($directories as $entry) {
         $dir_path_entry = $mc_array['dir_path'] . "" . $entry;
         $stat = stat($dir_path_entry);
-        $tit = implode(",", $stat);
+        $file_size = ($stat['size'] > 1024) ? round($stat['size'] / 1024, 2) . ' KB' : $stat['size'] . ' B';
+        $file_perm = perm($stat);
+        $file_perm .= ' '.substr(sprintf('%o', fileperms($entry)), -4);
+
         $mc_array['stat']=$stat;
-        
+   //Directory listing
         if (is_dir($dir_path_entry)) {
             echo "<li style='margin-left:1em;'>📁 
-            <a href='?dir=" . $mc_array['dir_path'] . $entry . "" . "'>" . $entry . "</a><br></li>";
+            <a href='?dir=" . $mc_array['dir_path'] . $entry . "" . "'>" . $entry .' ' . $file_perm . "</a><br></li>";
+
         } else {
-      	
-            $file_path = str_replace($mc_array['DOCUMENT_ROOT'] , '', $dir_path_entry);
-            $html_path = $protocol   .  $mc_array['HTTP_HOST'] . $file_path;
+   //File listing
+            $html_path = $protocol   .  $mc_array['HTTP_HOST'] . str_replace($mc_array['DOCUMENT_ROOT'] , '', $dir_path_entry);
             echo '<li style="margin-left:1em;">📝 ';
             echo '<a href="?tpage=' . $mc_array['dir_path'] . "" . $entry . '&filename=' . $entry . '&view=true&dir=' . $mc_array['dir_path'] . '" target="main">' . $entry .
-                '</a>  <a href="' . $html_path . '" title="stats:' . $tit . '" target="main"> ▶️ </a><br>
+                '</a> '.$file_size . ' ' . $file_perm .' <a href="' . $html_path . '" title="stats:' . "" . '" target="main"> ▶️ </a><br>
         </li>';
         }
     }
