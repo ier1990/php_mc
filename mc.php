@@ -59,9 +59,9 @@ $mc_array['tpage'] =  (isset($_GET['tpage'])) ? $_GET['tpage'] : false;
 /*  Figure out new dir_path */
 /************************************************/
 
-//$mc_array['tpage'] = str_replace('//', '/', $mc_array['tpage']);
-$mc_array['dir'] = str_replace('//', '/', $mc_array['dir'].'/');
-$mc_array['dir_path'] = $mc_array['dir']; 
+$mc_array['dir'] = realpath($mc_array['dir']);
+if($mc_array['dir']	== false) {$mc_array['dir'] = getcwd();}
+$mc_array['dir_path'] = $mc_array['dir'] . '/';  
 
 
 
@@ -119,20 +119,22 @@ $mc_array['protocol'] = $protocol;
 </head>
 
 <body>
-<h3>
+
 <div class="medium" style="overflow:scroll; overflow-x:hidden; height:50%;">
     <?php
     $directories = array_diff(scandir($mc_array['dir_path']), $mc_array['exclude_list']);
     echo '<ul style="list-style:none;padding:0">';
-    echo '<li style="margin-left:1em;">&#11014; 
-    <a href="?tpage=' . $mc_array['tpage'] . '&dir=' . dirname($mc_array['dir_path']) . '">up</a></li>';
-    //📝💾
+    echo '<li style="margin-left:1em;">.. 
+    <a href="?tpage=' . $mc_array['tpage'] . '&dir=' . dirname($mc_array['dir_path']) . '">💾 up</a></li>';
+    //📝💾📁▶️
     foreach ($directories as $entry) {
         $dir_path_entry = $mc_array['dir_path'] . "" . $entry;
         $stat = stat($dir_path_entry);
         $tit = implode(",", $stat);
+        $mc_array['stat']=$stat;
+        
         if (is_dir($dir_path_entry)) {
-            echo "<li style='margin-left:1em;'>&#128193; 
+            echo "<li style='margin-left:1em;'>📁 
             <a href='?dir=" . $mc_array['dir_path'] . $entry . "" . "'>" . $entry . "</a><br></li>";
         } else {
       	
@@ -140,12 +142,12 @@ $mc_array['protocol'] = $protocol;
             $html_path = $protocol   .  $mc_array['HTTP_HOST'] . $file_path;
             echo '<li style="margin-left:1em;">📝 ';
             echo '<a href="?tpage=' . $mc_array['dir_path'] . "" . $entry . '&filename=' . $entry . '&view=true&dir=' . $mc_array['dir_path'] . '" target="main">' . $entry .
-                '</a>  <a href="' . $html_path . '" title="' . $tit . '" target="main"> ▶️ </a><br>
+                '</a>  <a href="' . $html_path . '" title="stats:' . $tit . '" target="main"> ▶️ </a><br>
         </li>';
         }
     }
     echo "</ul>";
-    echo '</div></h3>';
+    echo '</div>';
 
     /***************
      * Source view *
