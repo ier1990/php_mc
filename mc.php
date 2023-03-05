@@ -1,16 +1,27 @@
 <?php
 
+/************************************************/
 // Production
 //error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
 //ini_set('display_errors', 0);
+//ini_set('display_startup_errors', 0);
+/************************************************/
 
+/************************************************/
 // Development
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-if(!file_exists("login.php")){echo "Login Failed!";exit;}
-//include "login.php";
+/************************************************/
 
+/************************************************/
+if(!file_exists("login.php")){echo "Login Failed!";exit;}
+include "login.php";
+/************************************************/
+
+/************************************************/
+/*   */
+/************************************************/
 function perm($stat){
     $file_perm = ($stat['mode'] & 0x1000) ? 'd' : '-';
     $file_perm .= ($stat['mode'] & 0x0100) ? 'r' : '-';
@@ -59,7 +70,6 @@ function internoetics_highlight_file($file,$mc_array=array())
 /************************************************/
 /*   */
 /************************************************/
-
 $mc_array = array();
 
 //Never changes
@@ -73,6 +83,7 @@ $mc_array['DOCUMENT_ROOT'] = $_SERVER['DOCUMENT_ROOT']; // /var/www/html
 $mc_array['dir'] =   (isset($_GET['dir'])) ? $_GET['dir'] : getcwd();
 $mc_array['view'] = (isset($_GET['view'])) ? $_GET['view'] : false;
 $mc_array['tpage'] =  (isset($_GET['tpage'])) ? $_GET['tpage'] : false;
+$mc_array['tpage'] =  str_replace('//', '/', $mc_array['tpage']);
 
 /************************************************/
 /*  Figure out new dir_path */
@@ -83,7 +94,6 @@ if ($mc_array['dir'] === false) {
 }
 $mc_array['dir_path'] = $mc_array['dir'] . '/';
 $mc_array['dir_path'] = str_replace('//', '/', $mc_array['dir_path']);
-$mc_array['tpage'] =  str_replace('//', '/', $mc_array['tpage']);
 
 /************************************************/
 /*  Figure out HTTP or HPPTS */
@@ -101,9 +111,10 @@ else {
 }
 $mc_array['protocol'] = $protocol;
 
-
-$self = str_replace($mc_array['DOCUMENT_ROOT'] , '',$_SERVER['PHP_SELF'] );
-$mc_array['self'] = $self;
+/************************************************/
+/*  Figure out self */
+/************************************************/
+$mc_array['self'] = str_replace($mc_array['DOCUMENT_ROOT'] , '',$_SERVER['PHP_SELF'] );
 
 /************************************************/
 /*  Start Header */
@@ -146,38 +157,62 @@ $mc_array['self'] = $self;
 <div class="medium" style="overflow:scroll; overflow-x:hidden; height:50%;">
     <?php
     //📝💾📁▶️
+    // Get all files and directories in the current directory
     $directories = array_diff(scandir($mc_array['dir_path']), $mc_array['exclude_list']);
+
+    // Header
     echo '<h4>Classic PHP Mugsy Commander - <a href="'. $protocol . $mc_array['HTTP_HOST'] . $mc_array['self'] . '" >' . $mc_array['HTTP_HOST'] . '</a></h4>';
     echo 'Directory: ' . $mc_array['dir_path'] . '';
+
     echo '<ul style="list-style:none;padding:0">';
 
-    //up directory
+    //up directory 💾️
     echo '<li style="margin-left:1em;">.. 
-    <a href="?tpage=' . $mc_array['tpage'] . '&dir=' . dirname($mc_array['dir_path']) . '">💾 up</a></li>';
+    <a href="?tpage=' . $mc_array['tpage'] . '&dir=' . dirname($mc_array['dir_path']) . '">💾 up</a>';
+    echo '<br></li>';
 
     foreach ($directories as $entry) {
+        //Directory path
         $dir_path_entry = $mc_array['dir_path'] . "" . $entry;
+
+        //Stat
         $stat = stat($dir_path_entry);
-        $file_size = ($stat['size'] > 1024) ? round($stat['size'] / 1024, 2) . ' KB' : $stat['size'] . ' B';
-        //$file_perm = substr(sprintf('%o', fileperms($entry)), -4);
-        $file_perm = perm($stat);
-
-
         $mc_array['stat']=$stat;
+
+        //File size
+        $file_size = ($stat['size'] > 1024) ? round($stat['size'] / 1024, 2) . ' KB' : $stat['size'] . ' B';
+
+        //Permissions 0666-rw-rw-rw- 0777-rwxrwxrwx
+        $file_perm = substr(sprintf('%o', $stat['mode']), -4);
+        $file_perm .= perm($stat);
+
+
+
    //Directory listing
         if (is_dir($dir_path_entry)) {
-            echo "<li style='margin-left:1em;'>📁 
-            <a href='?dir=" . $mc_array['dir_path'] . $entry . "" . "'>" . $entry .' ' . $file_perm . "</a><br></li>";
+           //📁️ Change Directory
+            echo "<li style='margin-left:1em;'>📁 <a href='?dir=" . $mc_array['dir_path'] . $entry . "" . "'>";
+            echo $entry .' ' . $file_perm . "</a>";
+            echo "<br></li>";
 
         } else {
    //File listing
-            $html_path = $protocol   .  $mc_array['HTTP_HOST'] . str_replace($mc_array['DOCUMENT_ROOT'] , '', $dir_path_entry);
-            echo '<li style="margin-left:1em;">📝 ';
-            echo '<a href="?tpage=' . $mc_array['dir_path'] . "" . $entry . '&filename=' . $entry . '&view=true&dir=' . $mc_array['dir_path'] . '" target="main">' . $entry .
-                '</a> '.$file_size . ' ' . $file_perm .' <a href="' . $html_path . '" title="stats:' . "" . '" target="main"> ▶️ </a><br>
-        </li>';
-        }
-    }
+        //HTML path
+        $html_path = $protocol   .  $mc_array['HTTP_HOST'] . str_replace($mc_array['DOCUMENT_ROOT'] , '', $dir_path_entry);
+
+        echo '<li style="margin-left:1em;">📝 ';
+
+        //📝 View File
+        echo '<a href="?tpage=' . $mc_array['dir_path'] . "" . $entry . '&filename=' . $entry . '&view=true&dir=' . $mc_array['dir_path'] . '" target="main">' . $entry . '</a> ';
+        echo $file_size . ' ' . $file_perm;
+
+        //▶️ Run File            ️
+        echo ' <a href="' . $html_path . '" title="stats:' . "" . '" target="main"> ▶️ </a>';
+
+        echo '<br></li>';
+
+        }  //end if is_dir
+    } //end foreach
     echo "</ul>";
     echo '</div>';
 
@@ -186,12 +221,12 @@ $mc_array['self'] = $self;
      ***************/
     if ($mc_array['view']) {
         echo '<div class="medium" style="overflow:scroll; overflow-x:hidden; height:50%;">';
-        echo "Displaying file:" . $mc_array['tpage'] . "<hr>";
+        echo "Displaying file:" . $mc_array['tpage'] . "<br>";
         echo internoetics_highlight_file($mc_array['tpage']);
         echo '</div>';
     }else{
         echo '<div class="medium" style="overflow:scroll; overflow-x:hidden; height:50%;">';
-        echo "Displaying file:" . $mc_array['tpage'] . "<hr><pre>";
+        echo "Displaying array:" . '<pre>';
         //echo internoetics_highlight_file($tpage,$mc_array);
         var_dump($mc_array);
         echo '</pre></div>';
