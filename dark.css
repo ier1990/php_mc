@@ -110,21 +110,21 @@ aside,
 	border-bottom-right-radius: 0;
 	border-bottom-left-radius: 0;
 	background-color : #000000;
-	color : #FFFFFF;
+	color : #ffffff;
 }
 .form-signin input[type="username"] {
 	margin-bottom: -1px;
 	border-bottom-right-radius: 0;
 	border-bottom-left-radius: 0;
 	background-color : #000000;
-	color : #FFFFFF;
+	color : #ffffff;
 }
 .form-signin input[type="email"] {
 	margin-bottom: -1px;
 	border-bottom-right-radius: 0;
 	border-bottom-left-radius: 0;
 	background-color : #000000;
-	color : #FFFFFF;
+	color : #ffffff;
 }
 
 .form-signin input[type="password"] {
@@ -132,14 +132,12 @@ aside,
 	border-top-left-radius: 0;
 	border-top-right-radius: 0;
 	background-color : #000000;
-	color : #FFFFFF;
+	color : #ffffff;
 }
-175
-
 
 input[type="text"], textarea {
 
 	background-color : #000000;
-	color : #FFFFFF;
+	color : #ffffff;
 
 }
