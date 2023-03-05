@@ -8,6 +8,7 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+if(!file_exists("login.php")){echo "Login Failed!";exit;}
 //include "login.php";
 
 function perm($stat){
@@ -145,7 +146,7 @@ $mc_array['self'] = $self;
     <?php
     //📝💾📁▶️
     $directories = array_diff(scandir($mc_array['dir_path']), $mc_array['exclude_list']);
-    echo '<h4>Classic PHP File Commander - <a href="'. $protocol . $mc_array['HTTP_HOST'] . $mc_array['self'] . '" >' . $mc_array['HTTP_HOST'] . '</a></h4>';
+    echo '<h4>Classic PHP Mugsy Commander - <a href="'. $protocol . $mc_array['HTTP_HOST'] . $mc_array['self'] . '" >' . $mc_array['HTTP_HOST'] . '</a></h4>';
     echo 'Directory: ' . $mc_array['dir_path'] . '';
     echo '<ul style="list-style:none;padding:0">';
 
