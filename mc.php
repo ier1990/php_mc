@@ -1,5 +1,6 @@
 <?php
 session_start(); /* Starts the session */
+//Validate Login
 if(!isset($_SESSION['UserData']['Username'])){
     header("location:login.php");
     exit;
@@ -19,8 +20,6 @@ error_reporting(E_ALL);
 
 /************************************************/
 $mc_array = array();
-/************************************************/
-$mc_array['login'] = false;
 /************************************************/
 
 
@@ -163,14 +162,14 @@ $mc_array['self'] = str_replace($mc_array['DOCUMENT_ROOT'] , '',$_SERVER['PHP_SE
     $directories = array_diff(scandir($mc_array['dir_path']), $mc_array['exclude_list']);
 
     // Header
-    echo 'Classic PHP Mugsy Commander - <a href="'. $protocol . $mc_array['HTTP_HOST'] . $mc_array['self'] . '" >' . $mc_array['HTTP_HOST'] . '</a> - <a href="logout.php">logout?</a> <br>';
+    echo '<h1>Classic PHP Mugsy Commander - <a href="'. $protocol . $mc_array['HTTP_HOST'] . $mc_array['self'] . '" >' . $mc_array['HTTP_HOST'] . '</a> - <a href="logout.php">logout?</a> </h1>';
     echo 'Directory: ' . $mc_array['dir_path'] . '';
 
     echo '<ul style="list-style:none;padding:0">';
 
     //up directory 💾️
-    echo '<li style="margin-left:1em;">.. 
-    <a href="?tpage=' . $mc_array['tpage'] . '&dir=' . dirname($mc_array['dir_path']) . '">💾 up</a>';
+    echo '<li style="margin-left:1em;">.. ';
+    echo '<a href="?tpage=' . $mc_array['tpage'] . '&dir=' . dirname($mc_array['dir_path']) . '">💾 up</a>';
     echo '<br></li>';
 
     foreach ($directories as $entry) {
@@ -193,7 +192,8 @@ $mc_array['self'] = str_replace($mc_array['DOCUMENT_ROOT'] , '',$_SERVER['PHP_SE
    //Directory listing
         if (is_dir($dir_path_entry)) {
            //📁️ Change Directory
-            echo "<li style='margin-left:1em;'>📁 <a href='?dir=" . $mc_array['dir_path'] . $entry . "" . "'>";
+            echo "<li style='margin-left:1em;'>📁 ";
+            echo "<a href='?dir=" . $mc_array['dir_path'] . $entry . "" . "'>";
             echo $entry .' ' . $file_perm . "</a>";
             echo "<br></li>";
 
@@ -205,7 +205,7 @@ $mc_array['self'] = str_replace($mc_array['DOCUMENT_ROOT'] , '',$_SERVER['PHP_SE
         echo '<li style="margin-left:1em;">📝 ';
 
         //📝 View File
-        echo '<a href="?tpage=' . $mc_array['dir_path'] . "" . $entry . '&filename=' . $entry . '&view=true&dir=' . $mc_array['dir_path'] . '" target="main">' . $entry . '</a> ';
+        echo '<a href="?tpage=' . $mc_array['dir_path'] . $entry . '&view=true&dir=' . $mc_array['dir_path'] . '" target="main">' . $entry . '</a> ';
         echo $file_size . ' ' . $file_perm;
 
         //▶️ Run File            ️
