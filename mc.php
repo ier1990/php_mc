@@ -83,6 +83,7 @@ if ($mc_array['dir'] === false) {
 }
 $mc_array['dir_path'] = $mc_array['dir'] . '/';
 $mc_array['dir_path'] = str_replace('//', '/', $mc_array['dir_path']);
+$mc_array['tpage'] =  str_replace('//', '/', $mc_array['tpage']);
 
 /************************************************/
 /*  Figure out HTTP or HPPTS */
@@ -158,8 +159,9 @@ $mc_array['self'] = $self;
         $dir_path_entry = $mc_array['dir_path'] . "" . $entry;
         $stat = stat($dir_path_entry);
         $file_size = ($stat['size'] > 1024) ? round($stat['size'] / 1024, 2) . ' KB' : $stat['size'] . ' B';
+        //$file_perm = substr(sprintf('%o', fileperms($entry)), -4);
         $file_perm = perm($stat);
-        $file_perm .= ' '.substr(sprintf('%o', fileperms($entry)), -4);
+
 
         $mc_array['stat']=$stat;
    //Directory listing
