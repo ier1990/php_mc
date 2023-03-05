@@ -48,54 +48,15 @@ function perm($stat){
 /************************************************/
 /*   */
 /************************************************/
-function internoetics_highlight_file($file,$mc_array=array())
-{
-    $return = "";
-    $code = substr(highlight_file($file, true), 36, -15);
-    $lines = explode('<br />', $code);
-    $lines = array_combine(range(1, count($lines)), $lines);
-
-    $return .= '<div style="width: 100%;"><code>';
-    foreach ($lines as $i => $line) {
-        if ($i % 2 == 0) {
-            $numbgcolor = '#000000'; //
-            $linebgcolor = '#000000'; //
-            $fontcolor = '#FFFFFF'; //
-        } else {
-            $numbgcolor = '#000000'; //
-            $linebgcolor = '#000000'; //
-            $fontcolor = '#FFFFFF'; //
-        }
-        $return .= '<br>
-<div style="
-background-color: ' . $numbgcolor . ';
-width: 23; 
-float: left; 
-padding-left: 2px; 
-padding-right: 2px; 
-text-align: center; 
-color: ' . $fontcolor . ';">' . $i . '</div>
-
-<div style="
-background-color: ' . $linebgcolor . ';
-margin-left: 0; 
-float: left; 
-padding-left: 5px;  
-width: calc(100% - 32px);">' . $line . '</div>';
-
-    }
-    $return .= '</code></div>';
-    return $return;
-}
-/************************************************/
-/*   */
-/************************************************/
 
 //Never changes
 $mc_array['exclude_list']= array(".", "..");
-$mc_array['HTTP_HOST']=$_SERVER['HTTP_HOST']; //"192.168.0.103"
-$mc_array['DOCUMENT_ROOT'] = $_SERVER['DOCUMENT_ROOT']; // /var/www/html
-
+$mc_array['HTTP_HOST']=(isset($_SERVER['HTTP_HOST'])) ? $_SERVER['HTTP_HOST'] : false;
+$mc_array['DOCUMENT_ROOT'] = (isset($_SERVER['DOCUMENT_ROOT'])) ? $_SERVER['DOCUMENT_ROOT'] : false;
+if($mc_array['HTTP_HOST'] === false || $mc_array['DOCUMENT_ROOT'] === false){
+    echo 'HTTP_HOST or DOCUMENT_ROOT not set';
+    exit;
+}
 /************************************************/
 /* GET Variables  */
 /************************************************/
@@ -221,20 +182,46 @@ $mc_array['self'] = str_replace($mc_array['DOCUMENT_ROOT'] , '',$_SERVER['PHP_SE
     /***************
      * Source view *
      ***************/
-    if ($mc_array['view']) {
+    if( ($mc_array['view']) && (is_readable($mc_array['tpage'])) ) {
         echo '<div class="medium" style="overflow:scroll; overflow-x:hidden; height:50%;">';
         echo "Displaying file:" . $mc_array['tpage'] . "<br>";
-        echo internoetics_highlight_file($mc_array['tpage']);
+//Caution
+//Care should be taken when using the highlight_file() function to make sure that you do not
+// inadvertently reveal sensitive information such as passwords or any other type of information
+// that might create a potential security risk.
+        // color purple hex #800080
+        ini_set('highlight.comment', '#800080; font-weight: bold;');
+        //ini_set('highlight.default', '#000000');
+        $file =  highlight_file($mc_array['tpage'], true);
+
+//since the output is returned as html and new lines are broken with the <br /> tag, let's explode each line to array using <br /> to recognise a new line
+        $file = explode ( '<br />', $file );
+//first line number should be 1 right?
+        $i = 1;
+//let's wrap the output with a table
+        echo '<table class="table table-striped table-hover ">';
+//Now for each line we are gonna add line number to it and wrap it up with their divs
+        foreach ( $file as $line ) {
+            echo '<tr><td width="34">';
+            echo $i;
+            echo '. ';
+            echo '</td>';
+
+            echo '<td class="syntax-highlight-line">';
+            echo $line;
+            echo '</td></tr>';
+
+            $i++;
+        }
+echo '</table>';
+
+
         echo '</div>';
     }else{
         echo '<div class="medium" style="overflow:scroll; overflow-x:hidden; height:50%;">';
         echo "Displaying array:" . '<pre>';
-        //echo internoetics_highlight_file($tpage,$mc_array);
         var_dump($mc_array);
         echo '</pre></div>';
-
-    
-    
     }
     ?>
 
