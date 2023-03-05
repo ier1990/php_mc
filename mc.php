@@ -59,15 +59,31 @@ function internoetics_highlight_file($file,$mc_array=array())
     $return .= '<div style="width: 100%;"><code>';
     foreach ($lines as $i => $line) {
         if ($i % 2 == 0) {
-            $numbgcolor = '#C8E1FA';
-            $linebgcolor = '#F7F7F7';
-            $fontcolor = '#3F85CA';
+            $numbgcolor = '#000000'; //
+            $linebgcolor = '#000000'; //
+            $fontcolor = '#FFFFFF'; //
         } else {
-            $numbgcolor = '#DFEFFF';
-            $linebgcolor = '#FDFDFD';
-            $fontcolor = '#5499DE';
+            $numbgcolor = '#000000'; //
+            $linebgcolor = '#000000'; //
+            $fontcolor = '#FFFFFF'; //
         }
-        $return .= '<br><div style="background-color: ' . $numbgcolor . '; width: 23; float: left; padding-left: 2px; padding-right: 2px; text-align: center; color: ' . $fontcolor . ';">' . $i . '</div><div style="background-color: ' . $linebgcolor . '; margin-left: 0; float: left; padding-left: 5px;  width: calc(100% - 32px);">' . $line . '</div>';
+        $return .= '<br>
+<div style="
+background-color: ' . $numbgcolor . ';
+width: 23; 
+float: left; 
+padding-left: 2px; 
+padding-right: 2px; 
+text-align: center; 
+color: ' . $fontcolor . ';">' . $i . '</div>
+
+<div style="
+background-color: ' . $linebgcolor . ';
+margin-left: 0; 
+float: left; 
+padding-left: 5px;  
+width: calc(100% - 32px);">' . $line . '</div>';
+
     }
     $return .= '</code></div>';
     return $return;

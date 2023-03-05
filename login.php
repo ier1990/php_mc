@@ -41,11 +41,11 @@ if($username == $mc_array['username'] && $password == $mc_array['password'])
              <img class="mb-4" src="logoskull.png" alt="" width="72" height="57">
              <h1 class="h3 mb-3 fw-normal">Please sign in</h1>
 
-             <div class="form-floating">
+             <div class="form-floating input-field" data-theme="dark">
                  <input type="text" name="username" class="form-control" id="floatingInput" placeholder="admin">
                  <label for="floatingInput">Username</label>
              </div>
-             <div class="form-floating">
+             <div class="form-floating input-field" data-theme="dark">
                  <input type="password" name="password" class="form-control" id="floatingPassword" placeholder="Password">
                  <label for="floatingPassword">Password</label>
              </div>
