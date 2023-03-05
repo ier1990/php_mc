@@ -1,5 +1,9 @@
 <?php
-
+session_start(); /* Starts the session */
+if(!isset($_SESSION['UserData']['Username'])){
+    header("location:login.php");
+    exit;
+}
 /************************************************/
 // Production
 //error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
@@ -12,12 +16,13 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-/************************************************/
 
 /************************************************/
-if(!file_exists("login.php")){echo "Login Failed!";exit;}
-include "login.php";
+$mc_array = array();
 /************************************************/
+$mc_array['login'] = false;
+/************************************************/
+
 
 /************************************************/
 /*   */
@@ -70,7 +75,6 @@ function internoetics_highlight_file($file,$mc_array=array())
 /************************************************/
 /*   */
 /************************************************/
-$mc_array = array();
 
 //Never changes
 $mc_array['exclude_list']= array(".", "..");
@@ -120,35 +124,17 @@ $mc_array['self'] = str_replace($mc_array['DOCUMENT_ROOT'] , '',$_SERVER['PHP_SE
 /*  Start Header */
 /************************************************/
 ?>
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8">
-    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Classic PHP File Commander</title>
 
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap v5.2.3 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
 
-    <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-
-    <!-- Optional theme -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
-          integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-
-    <!-- Latest compiled and minified JavaScript -->
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
-            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
-            crossorigin="anonymous"></script>
-
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-    <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-    <![endif]-->
+    <link rel="stylesheet" href="dark.css">
 
 </head>
 
@@ -161,7 +147,7 @@ $mc_array['self'] = str_replace($mc_array['DOCUMENT_ROOT'] , '',$_SERVER['PHP_SE
     $directories = array_diff(scandir($mc_array['dir_path']), $mc_array['exclude_list']);
 
     // Header
-    echo '<h4>Classic PHP Mugsy Commander - <a href="'. $protocol . $mc_array['HTTP_HOST'] . $mc_array['self'] . '" >' . $mc_array['HTTP_HOST'] . '</a></h4>';
+    echo 'Classic PHP Mugsy Commander - <a href="'. $protocol . $mc_array['HTTP_HOST'] . $mc_array['self'] . '" >' . $mc_array['HTTP_HOST'] . '</a> - <a href="logout.php">logout?</a> <br>';
     echo 'Directory: ' . $mc_array['dir_path'] . '';
 
     echo '<ul style="list-style:none;padding:0">';
@@ -236,15 +222,8 @@ $mc_array['self'] = str_replace($mc_array['DOCUMENT_ROOT'] , '',$_SERVER['PHP_SE
     }
     ?>
 
+    <!-- v5.2.3 Latest compiled and minified JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
 
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script
-            src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.min.js"
-            integrity="sha512-1/RvZTcCDEUjY/CypiMz+iqqtaoQfAITmNSJY17Myp4Ms5mdxPS5UV7iOfdZoxcGhzFbOm6sntTKJppjvuhg4g=="
-            crossorigin="anonymous"
-            referrerpolicy="no-referrer">
-    </script>
 </body>
 </html>
