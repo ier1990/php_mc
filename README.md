@@ -4,9 +4,12 @@ This is a git repo of Classic PHP MC File Commander
 name: Classic PHP Mugsy File Commander
 tested on: PHP 8.1.2-1ubuntu2.11
 
-include_once(dirname(__FILE__).'/class/mc_class.php');
-$mc = new mc_class();
-$listing=array();
+    //basics
+    $mc_array['username'] = 'admin';
+    $mc_array['password'] = 'password';
+    include_once(dirname(__FILE__).'/class/mc_class.php');
+    $mc = new mc_class();
+    $listing=array();
 
     // Get all files and directories in the current directory
     $directories = glob($mc->get_dir_path() . '*', GLOB_MARK | GLOB_ONLYDIR);
