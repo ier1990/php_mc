@@ -4,7 +4,6 @@ This is a git repo of Classic PHP MC File Commander
 name: Classic PHP Mugsy File Commander
 tested on: PHP 8.1.2-1ubuntu2.11
 
-//echo dirname(__FILE__).'/class/mc_class.php';
 include_once(dirname(__FILE__).'/class/mc_class.php');
 $mc = new mc_class();
 $listing=array();
