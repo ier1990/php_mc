@@ -21,3 +21,4 @@ $listing=array();
 
 $mc->show_table($listing);
 
+![MC Class](mc_class.png)
