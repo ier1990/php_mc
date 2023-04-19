@@ -103,9 +103,6 @@ $listing=array();
 $mc->show_table($listing);
 echo '</div>';
 
-//https://www.samekhi.com/admin/github/php_mc/mc.php
-//?dir=/var/www/samekhi.com/admin/github/php_mc/
-//&tpage=/var/www/samekhi.com/admin/github/php_mc/dark.css
 
     /***************
      * Source view *
