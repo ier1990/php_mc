@@ -53,7 +53,7 @@ function perm($stat){
 $mc_array['exclude_list']= array(".", "..");
 $mc_array['HTTP_HOST']=(isset($_SERVER['HTTP_HOST'])) ? $_SERVER['HTTP_HOST'] : false;
 $mc_array['DOCUMENT_ROOT'] = (isset($_SERVER['DOCUMENT_ROOT'])) ? $_SERVER['DOCUMENT_ROOT'] : false;
-$mc_array['DOCUMENT_ROOT'] = str_replace('/', '\\', $mc_array['DOCUMENT_ROOT']);
+$mc_array['DOCUMENT_ROOT'] = str_replace('\\', '/', $mc_array['DOCUMENT_ROOT']);
 if($mc_array['HTTP_HOST'] === false || $mc_array['DOCUMENT_ROOT'] === false){
     echo 'HTTP_HOST or DOCUMENT_ROOT not set';
     exit;
@@ -73,6 +73,7 @@ $mc_array['dir'] = realpath($mc_array['dir']);
 if ($mc_array['dir'] === false) {
     $mc_array['dir'] = getcwd();
 }
+$mc_array['dir'] = str_replace('\\', '/', $mc_array['dir']);
 $mc_array['dir_path'] = $mc_array['dir'] . '/';
 $mc_array['dir_path'] = str_replace('//', '/', $mc_array['dir_path']);
 
