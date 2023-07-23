@@ -2,8 +2,8 @@
 session_start(); /* Starts the session */
 //Validate Login
 if(!isset($_SESSION['UserData']['Username'])){
-    header("location:login.php");
-    exit;
+    //header("location:login.php");
+    //exit;
 }
 /************************************************/
 // Production
