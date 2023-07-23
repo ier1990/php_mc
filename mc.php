@@ -53,6 +53,7 @@ function perm($stat){
 $mc_array['exclude_list']= array(".", "..");
 $mc_array['HTTP_HOST']=(isset($_SERVER['HTTP_HOST'])) ? $_SERVER['HTTP_HOST'] : false;
 $mc_array['DOCUMENT_ROOT'] = (isset($_SERVER['DOCUMENT_ROOT'])) ? $_SERVER['DOCUMENT_ROOT'] : false;
+$mc_array['DOCUMENT_ROOT'] = str_replace('/', '\\', $mc_array['DOCUMENT_ROOT']);
 if($mc_array['HTTP_HOST'] === false || $mc_array['DOCUMENT_ROOT'] === false){
     echo 'HTTP_HOST or DOCUMENT_ROOT not set';
     exit;
@@ -169,7 +170,7 @@ $mc_array['self'] = str_replace($mc_array['DOCUMENT_ROOT'] , '',$_SERVER['PHP_SE
         echo '<a href="?tpage=' . $mc_array['dir_path'] . $entry . '&view=true&dir=' . $mc_array['dir_path'] . '" target="main">' . $entry . '</a> ';
         echo $file_size . ' ' . $file_perm;
 
-        //▶️ Run File            ️
+        //▶️ Run File   
         echo ' <a href="' . $html_path . '" title="stats:' . "" . '" target="main"> ▶️ </a>';
 
         echo '<br></li>';
