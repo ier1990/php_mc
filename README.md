@@ -2,7 +2,7 @@
 This is a git repo of Classic PHP MC File Commander
 
 name: Classic PHP Mugsy File Commander
-tested on: PHP 8.1.2-1ubuntu2.11
+tested on: PHP 8.1.2-1ubuntu2.11 & Win Xampp PHP 8.2.4
 
     //basics
     $mc_array['username'] = 'admin';
