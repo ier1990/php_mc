@@ -1,27 +1,48 @@
-![MCClass](https://github.com/ier1990/php_mc/blob/3239d1f898fdfa2c9d1580c02f571d67a3fc9eff/mc_class.png)
-This is a git repo of Classic PHP MC File Commander
+# PHP Tree File Viewer
 
-name: Classic PHP Mugsy File Commander
-tested on: PHP 8.1.2-1ubuntu2.11 & Win Xampp PHP 8.2.4
+This project provides a modern, user-friendly file browser for PHP environments. It includes a real-time directory tree, live code previews with syntax highlighting, metadata display, and support for image and PDF previewing.
 
-    //basics
-    $mc_array['username'] = 'admin';
-    $mc_array['password'] = 'password';
-    include_once(dirname(__FILE__).'/class/mc_class.php');
-    $mc = new mc_class();
-    $listing=array();
+## Features
 
-    // Get all files and directories in the current directory
-    $directories = glob($mc->get_dir_path() . '*', GLOB_MARK | GLOB_ONLYDIR);
-    $files = array_filter(glob($mc->get_dir_path() ."*"), 'is_file');
-    
-    //process example name	type	size	perm
-    $listing[$a]['path']=dirname($mc->get_dir_path()).'/';
-    $listing[$a]['name']=$mc->get_icon_up() . 'UP';
-    $listing[$a]['type']='dir';
-    $listing[$a]['size']='4096';
-    $listing[$a]['perm']='..';
+- 📂 **Directory Tree UI** – Navigate directories using a left-pane tree view
+- 📝 **File Preview** – View code files with syntax highlighting (Highlight.js)
+- 🖼️ **Image and PDF Support** – Display images and PDFs inline in the right pane
+- 📜 **Metadata Display** – View permissions, file size, and file ownership
+- 🌙 **Dark Theme** – Low-vision friendly layout with white-on-black readability
 
-$mc->show_table($listing);
+## Technologies Used
+
+- PHP (7.3+ and 8.x supported)
+- Bootstrap 3 for layout
+- Highlight.js for syntax highlighting
+
+## Usage
+
+Upload the file as `mc.php` or similar inside your project root. Then access it via your browser:
+
+```
+http://yourdomain.com/admin/mc.php
+```
+
+You can navigate folders, preview files, and view server paths.
+
+## Roadmap Ideas
+
+- [x] Dark mode and metadata overlay
+- [x] Syntax highlighting with Highlight.js
+- [ ] Tag or flag files for future review
+- [ ] AI-enhanced indexing or refactoring queue
+- [ ] Notes/comments on files saved in SQLite
+
+## Security Note
+This tool is intended for local or protected environments. Do **not** expose it publicly without access control.
+
+## License
+MIT License
+
+## Credits
+Created by [@ier1990](https://github.com/ier1990) and ChatGPT.
+
+
 
 

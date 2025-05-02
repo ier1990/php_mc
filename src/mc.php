@@ -1,183 +1,97 @@
 <?php
 
-// Production
-//error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
-//ini_set('display_errors', 0);
-
-// Development
+// Development mode
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-//include "login.php";
-
-/************************************************/
-/*   */
-/************************************************/
-function internoetics_highlight_file($file,$mc_array=array())
-{
-    $return = "";
-    $code = substr(highlight_file($file, true), 36, -15);
-    $lines = explode('<br />', $code);
-    $lines = array_combine(range(1, count($lines)), $lines);
-
-    $return .= '<div style="width: 100%;"><code>';
-    foreach ($lines as $i => $line) {
-        if ($i % 2 == 0) {
-            $numbgcolor = '#C8E1FA';
-            $linebgcolor = '#F7F7F7';
-            $fontcolor = '#3F85CA';
-        } else {
-            $numbgcolor = '#DFEFFF';
-            $linebgcolor = '#FDFDFD';
-            $fontcolor = '#5499DE';
-        }
-        $return .= '<br><div style="background-color: ' . $numbgcolor . '; width: 23; float: left; padding-left: 2px; padding-right: 2px; text-align: center; color: ' . $fontcolor . ';">' . $i . '</div><div style="background-color: ' . $linebgcolor . '; margin-left: 0; float: left; padding-left: 5px;  width: calc(100% - 32px);">' . $line . '</div>';
-    }
-    $return .= '</code></div>';
-    return $return;
-}
-/************************************************/
-/*   */
-/************************************************/
 
 $mc_array = array();
-
-//Never changes
-$mc_array['exclude_list']= array(".", "..");
-$mc_array['HTTP_HOST']=$_SERVER['HTTP_HOST']; //"192.168.0.103"
-$mc_array['DOCUMENT_ROOT'] = $_SERVER['DOCUMENT_ROOT']; // /var/www/html
-
-/************************************************/
-/* GET Variables  */
-/************************************************/
-
-$mc_array['dir'] =   (isset($_GET['dir'])) ? $_GET['dir'] : getcwd();
-$mc_array['view'] = (isset($_GET['view'])) ? $_GET['view'] : false;
-$mc_array['tpage'] =  (isset($_GET['tpage'])) ? $_GET['tpage'] : false;
-
-/************************************************/
-/*  Figure out new dir_path */
-/************************************************/
-
+$mc_array['exclude_list'] = array(".", "..", ".git", ".svn");
+$mc_array['HTTP_HOST'] = $_SERVER['HTTP_HOST'];
+$mc_array['DOCUMENT_ROOT'] = $_SERVER['DOCUMENT_ROOT'];
+$mc_array['dir'] = isset($_GET['dir']) ? $_GET['dir'] : getcwd();
+$mc_array['view'] = isset($_GET['view']) ? $_GET['view'] : false;
+$mc_array['tpage'] = isset($_GET['tpage']) ? $_GET['tpage'] : false;
 $mc_array['dir'] = realpath($mc_array['dir']);
-if($mc_array['dir']	== false) {$mc_array['dir'] = getcwd();}
-$mc_array['dir_path'] = $mc_array['dir'] . '/';  
-
-
-
-/************************************************/
-/*  Figure out HTTP or HPPTS */
-/*  https://stackoverflow.com/questions/4503135/php-get-site-url-protocol-http-vs-https */
-/************************************************/
-
-if (isset($_SERVER['HTTPS']) &&
-    ($_SERVER['HTTPS'] == 'on' || $_SERVER['HTTPS'] == 1) ||
-    isset($_SERVER['HTTP_X_FORWARDED_PROTO']) &&
-    $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https') {
-  $protocol = 'https://';
-}
-else {
-  $protocol = 'http://';
-}
-$mc_array['protocol'] = $protocol; 
-
-
-/************************************************/
-/*  Start Header */
-/************************************************/
+if ($mc_array['dir'] == false) { $mc_array['dir'] = getcwd(); }
+$mc_array['dir_path'] = $mc_array['dir'] . '/';
+$protocol = (!empty($_SERVER['HTTPS']) || $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https://' : 'http://';
+$mc_array['protocol'] = $protocol;
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="utf-8">
-    <meta name="robots" content="noindex, nofollow">
-    <title>Classic PHP File Commander</title>
-
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-
-    <!-- Optional theme -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
-          integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-
-    <!-- Latest compiled and minified JavaScript -->
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
-            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
-            crossorigin="anonymous"></script>
-
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-    <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-    <![endif]-->
-
+  <meta charset="utf-8">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PHP File Browser</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/base16/tomorrow-night.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <style>
+    body { background-color:#111; color:#eee; }
+    .scroll-box { height: 90vh; overflow: auto; border-right: 1px solid #444; padding-right: 1em; }
+    .code-box { height: 90vh; overflow: auto; background: #1e1e1e; padding: 1em; }
+    pre { white-space: pre-wrap; word-wrap: break-word; }
+    .tree-label { font-weight: bold; color: #66ccff; margin-bottom: 0.5em; }
+  </style>
 </head>
-
 <body>
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-sm-5 scroll-box">
+      <div class="tree-label">📂 Directory Tree</div>
+      <?php
+      $parent_dir = dirname($mc_array['dir_path']);
+      if ($parent_dir !== $mc_array['dir_path']) {
+          echo '<div><a href="?dir=' . urlencode($parent_dir) . '" style="color:lightblue">⬆️ Up to ' . htmlspecialchars($parent_dir) . '</a></div><hr>';
+      }
 
-<div class="medium" style="overflow:scroll; overflow-x:hidden; height:50%;">
-    <?php
-    $directories = array_diff(scandir($mc_array['dir_path']), $mc_array['exclude_list']);
-    echo '<ul style="list-style:none;padding:0">';
-    echo '<li style="margin-left:1em;">.. 
-    <a href="?tpage=' . $mc_array['tpage'] . '&dir=' . dirname($mc_array['dir_path']) . '">💾 up</a></li>';
-    //📝💾📁▶️
-    foreach ($directories as $entry) {
-        $dir_path_entry = $mc_array['dir_path'] . "" . $entry;
-        $stat = stat($dir_path_entry);
-        $tit = implode(",", $stat);
-        $mc_array['stat']=$stat;
-        
-        if (is_dir($dir_path_entry)) {
-            echo "<li style='margin-left:1em;'>📁 
-            <a href='?dir=" . $mc_array['dir_path'] . $entry . "" . "'>" . $entry . "</a><br></li>";
-        } else {
-      	
-            $file_path = str_replace($mc_array['DOCUMENT_ROOT'] , '', $dir_path_entry);
-            $html_path = $protocol   .  $mc_array['HTTP_HOST'] . $file_path;
-            echo '<li style="margin-left:1em;">📝 ';
-            echo '<a href="?tpage=' . $mc_array['dir_path'] . "" . $entry . '&filename=' . $entry . '&view=true&dir=' . $mc_array['dir_path'] . '" target="main">' . $entry .
-                '</a>  <a href="' . $html_path . '" title="stats:' . $tit . '" target="main"> ▶️ </a><br>
-        </li>';
-        }
-    }
-    echo "</ul>";
-    echo '</div>';
-
-    /***************
-     * Source view *
-     ***************/
-    if ($mc_array['view']) {
-        echo '<div class="medium" style="overflow:scroll; overflow-x:hidden; height:50%;">';
-        echo "Displaying file:" . $mc_array['tpage'] . "<hr>";
-        echo internoetics_highlight_file($mc_array['tpage']);
-        echo '</div>';
-    }else{
-        echo '<div class="medium" style="overflow:scroll; overflow-x:hidden; height:50%;">';
-        echo "Displaying file:" . $mc_array['tpage'] . "<hr><pre>";
-        //echo internoetics_highlight_file($tpage,$mc_array);
-        var_dump($mc_array);
-        echo '</pre></div>';
-
-    
-    
-    }
-    ?>
-
-
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script
-            src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.min.js"
-            integrity="sha512-1/RvZTcCDEUjY/CypiMz+iqqtaoQfAITmNSJY17Myp4Ms5mdxPS5UV7iOfdZoxcGhzFbOm6sntTKJppjvuhg4g=="
-            crossorigin="anonymous"
-            referrerpolicy="no-referrer">
-    </script>
+      $directories = array_diff(scandir($mc_array['dir_path']), $mc_array['exclude_list']);
+      echo '<ul style="list-style:none;padding:0">';
+      foreach ($directories as $entry) {
+          $dir_path_entry = $mc_array['dir_path'] . $entry;
+          if (is_dir($dir_path_entry)) {
+              echo "<li style='margin-left:1em;'>📁 <a href='?dir=" . urlencode($dir_path_entry) . "' style='color:orange'>" . htmlspecialchars($entry) . "</a></li>";
+          } else {
+              $file_path = str_replace($mc_array['DOCUMENT_ROOT'], '', $dir_path_entry);
+              $html_path = $protocol . $mc_array['HTTP_HOST'] . $file_path;
+              $stat = stat($dir_path_entry);
+              $perms = substr(sprintf('%o', fileperms($dir_path_entry)), -4);
+              $size = number_format($stat['size']);
+              $owner = posix_getpwuid($stat['uid'])['name'] ?? $stat['uid'];
+              echo '<li style="margin-left:1em;">📝 ';
+              echo '<a href="?tpage=' . urlencode($dir_path_entry) . '&filename=' . urlencode($entry) . '&view=true&dir=' . urlencode($mc_array['dir_path']) . '" style="color:lightgreen">' . htmlspecialchars($entry) . '</a> ';
+              echo "<small style='color:#999'>[$perms | {$size} bytes | owner: $owner]</small> ";
+              echo '<a href="' . $html_path . '" target="_blank">🔗</a></li>';
+          }
+      }
+      echo '</ul>'; 
+      ?>
+    </div>
+    <div class="col-sm-7 code-box">
+      <?php
+      if ($mc_array['view']) {
+          echo '<h4>Viewing file: ' . htmlspecialchars($mc_array['tpage']) . '</h4><hr>';
+          $ext = strtolower(pathinfo($mc_array['tpage'], PATHINFO_EXTENSION));
+          if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
+              echo '<img src="' . htmlspecialchars($protocol . $mc_array['HTTP_HOST'] . str_replace($mc_array['DOCUMENT_ROOT'], '', $mc_array['tpage'])) . '" class="img-responsive" style="max-width:100%">';
+          } elseif ($ext === 'pdf') {
+              echo '<iframe src="' . htmlspecialchars($protocol . $mc_array['HTTP_HOST'] . str_replace($mc_array['DOCUMENT_ROOT'], '', $mc_array['tpage'])) . '" width="100%" height="800px"></iframe>';
+          } else {
+              echo '<pre><code class="' . htmlspecialchars($ext) . '">' . htmlspecialchars(file_get_contents($mc_array['tpage'])) . '</code></pre>';
+          }
+      } else {
+          // Display the mc_array contents for debugging
+          //can we make it black bground and white text?         
+          echo '<pre style="background-color:#111;color:#eee;">';
+          echo '<code>' . htmlspecialchars(print_r($mc_array, true)) . '</code>';
+          echo '</pre>';;
+      }
+      ?>
+    </div>
+  </div>
+</div>
 </body>
 </html>
