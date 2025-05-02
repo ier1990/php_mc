@@ -10,6 +10,11 @@ This project provides a modern, user-friendly file browser for PHP environments.
 - 📜 **Metadata Display** – View permissions, file size, and file ownership
 - 🌙 **Dark Theme** – Low-vision friendly layout with white-on-black readability
 
+## Preview
+
+![File Viewer Screenshot](assets/mc.png)
+
+
 ## Technologies Used
 
 - PHP (7.3+ and 8.x supported)
