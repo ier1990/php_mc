@@ -64,7 +64,9 @@ $mc_array['protocol'] = $protocol;
               echo '<li style="margin-left:1em;">📝 ';
               echo '<a href="?tpage=' . urlencode($dir_path_entry) . '&filename=' . urlencode($entry) . '&view=true&dir=' . urlencode($mc_array['dir_path']) . '" style="color:lightgreen">' . htmlspecialchars($entry) . '</a> ';
               echo "<small style='color:#999'>[$perms | {$size} bytes | owner: $owner]</small> ";
-              echo '<a href="' . $html_path . '" target="_blank">🔗</a></li>';
+              echo '<a href="' . $html_path . '" target="_blank">🔗</a> ';
+              echo '<a href="?tpage=custom.php&file=' . urlencode($dir_path_entry) . '&view=custom&dir=' . urlencode($mc_array['dir_path']) . '" style="color:#ffcc00">🔧</a>';
+
           }
       }
       echo '</ul>'; 
@@ -72,7 +74,19 @@ $mc_array['protocol'] = $protocol;
     </div>
     <div class="col-sm-7 code-box">
       <?php
-      if ($mc_array['view']) {
+/*
+        * Display the contents of the selected file or directory.
+        * If a file is selected, show its content with syntax highlighting.
+        * If a directory is selected, show its contents in a tree view.
+        * If a custom test file is specified, include it for testing.
+
+*/
+      if ($mc_array['view'] === 'custom' && isset($_GET['file'])) {
+        $test_file = $_GET['file'];
+        echo "<h4>Running test on: " . htmlspecialchars($test_file) . "</h4><hr>";
+        include 'custom.php';
+
+    } else if ($mc_array['view']) {
           echo '<h4>Viewing file: ' . htmlspecialchars($mc_array['tpage']) . '</h4><hr>';
           $ext = strtolower(pathinfo($mc_array['tpage'], PATHINFO_EXTENSION));
           if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
