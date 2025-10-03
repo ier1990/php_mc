@@ -1,0 +1,7 @@
+# Ignore the SQLite DB file
+src/private/db/codewalker.db
+src/private/.env
+
+# But keep the directory
+!src/private/db/
+!src/private/logs/

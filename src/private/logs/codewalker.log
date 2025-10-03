@@ -1,0 +1,28 @@
+2025-10-02 23:05:01,536 | CodeWalker INFO | Starting CodeWalker v1.0.0 | backend=lmstudio model=openai/gpt-oss-20b
+2025-10-02 23:05:01,536 | CodeWalker INFO | Scan: /var/www/html/admin/php_mc  types=['php', 'py', 'sh', 'log']  exclude=['.git', 'vendor', 'node_modules', 'storage', 'cache', 'tmp', 'uploads', 'private/db', 'private/logs', 'private/cache', 'private/tmp'] exclude_files=['codewalker.py']
+2025-10-02 23:05:01,544 | CodeWalker INFO | Found 0 candidate files
+2025-10-02 23:05:01,544 | CodeWalker INFO | Processed 0 files (limit 2)
+2025-10-02 23:10:01,839 | CodeWalker INFO | Starting CodeWalker v1.0.0 | backend=lmstudio model=openai/gpt-oss-20b
+2025-10-02 23:10:01,840 | CodeWalker INFO | Scan: /var/www/html/admin/php_mc  types=['php', 'py', 'sh', 'log']  exclude=['.git', 'vendor', 'node_modules', 'storage', 'cache', 'tmp', 'uploads', 'private/db', 'private/logs', 'private/cache', 'private/tmp'] exclude_files=['codewalker.py']
+2025-10-02 23:10:01,848 | CodeWalker INFO | Found 0 candidate files
+2025-10-02 23:10:01,848 | CodeWalker INFO | Processed 0 files (limit 2)
+2025-10-02 23:15:02,146 | CodeWalker INFO | Starting CodeWalker v1.0.0 | backend=lmstudio model=openai/gpt-oss-20b
+2025-10-02 23:15:02,146 | CodeWalker INFO | Scan: /var/www/html/admin/php_mc  types=['php', 'py', 'sh', 'log']  exclude=['.git', 'vendor', 'node_modules', 'storage', 'cache', 'tmp', 'uploads', 'private/db', 'private/logs', 'private/cache', 'private/tmp'] exclude_files=['codewalker.py']
+2025-10-02 23:15:02,153 | CodeWalker INFO | Found 0 candidate files
+2025-10-02 23:15:02,153 | CodeWalker INFO | Processed 0 files (limit 2)
+2025-10-02 23:20:01,448 | CodeWalker INFO | Starting CodeWalker v1.0.0 | backend=lmstudio model=openai/gpt-oss-20b
+2025-10-02 23:20:01,448 | CodeWalker INFO | Scan: /var/www/html/admin/php_mc  types=['php', 'py', 'sh', 'log']  exclude=['.git', 'vendor', 'node_modules', 'storage', 'cache', 'tmp', 'uploads', 'private/db', 'private/logs', 'private/cache', 'private/tmp'] exclude_files=['codewalker.py']
+2025-10-02 23:20:01,455 | CodeWalker INFO | Found 0 candidate files
+2025-10-02 23:20:01,456 | CodeWalker INFO | Processed 0 files (limit 2)
+2025-10-02 23:25:01,748 | CodeWalker INFO | Starting CodeWalker v1.0.0 | backend=lmstudio model=openai/gpt-oss-20b
+2025-10-02 23:25:01,748 | CodeWalker INFO | Scan: /var/www/html/admin/php_mc  types=['php', 'py', 'sh', 'log']  exclude=['.git', 'vendor', 'node_modules', 'storage', 'cache', 'tmp', 'uploads', 'private/db', 'private/logs', 'private/cache', 'private/tmp'] exclude_files=['codewalker.py']
+2025-10-02 23:25:01,756 | CodeWalker INFO | Found 0 candidate files
+2025-10-02 23:25:01,756 | CodeWalker INFO | Processed 0 files (limit 2)
+2025-10-02 23:30:02,053 | CodeWalker INFO | Starting CodeWalker v1.0.0 | backend=lmstudio model=openai/gpt-oss-20b
+2025-10-02 23:30:02,053 | CodeWalker INFO | Scan: /var/www/html/admin/php_mc  types=['php', 'py', 'sh', 'log']  exclude=['.git', 'vendor', 'node_modules', 'storage', 'cache', 'tmp', 'uploads', 'private/db', 'private/logs', 'private/cache', 'private/tmp'] exclude_files=['codewalker.py']
+2025-10-02 23:30:02,061 | CodeWalker INFO | Found 0 candidate files
+2025-10-02 23:30:02,061 | CodeWalker INFO | Processed 0 files (limit 2)
+2025-10-02 23:35:01,396 | CodeWalker INFO | Starting CodeWalker v1.0.0 | backend=lmstudio model=openai/gpt-oss-20b
+2025-10-02 23:35:01,396 | CodeWalker INFO | Scan: /var/www/html/admin/php_mc  types=['php', 'py', 'sh', 'log']  exclude=['.git', 'vendor', 'node_modules', 'storage', 'cache', 'tmp', 'uploads', 'private/db', 'private/logs', 'private/cache', 'private/tmp'] exclude_files=['codewalker.py']
+2025-10-02 23:35:01,403 | CodeWalker INFO | Found 0 candidate files
+2025-10-02 23:35:01,403 | CodeWalker INFO | Processed 0 files (limit 2)

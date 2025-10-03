@@ -1,0 +1,44 @@
+{
+    "name": "CodeWalker",
+    "mode": "que",
+    "scan_path": "/var/www/html/admin/php_mc",
+    "write_root": "/var/www/html/admin/php_mc",
+    "file_types": [
+        "php",
+        "py",
+        "sh",
+        "log"
+    ],
+    "actions": [
+        "summarize",
+        "rewrite"
+    ],
+    "rewrite_prompt": "Make this code more readable and modular.",
+    "deterministic_per_file": false,
+    "db_path": "/var/www/html/admin/php_mc/src/private/db/codewalker.db",
+    "log_path": "/var/www/html/admin/php_mc/src/private/logs/codewalker.log",
+    "exclude_dirs": [
+        ".git",
+        "vendor",
+        "node_modules",
+        "storage",
+        "cache",
+        "tmp",
+        "uploads",
+        "private/db",
+        "private/logs",
+        "private/cache",
+        "private/tmp"
+    ],
+    "exclude_files": [
+        "codewalker.py"
+    ],
+    "max_filesize_kb": 128,
+    "log_tail_lines": 200,
+    "backend": "lmstudio",
+    "model": "openai/gpt-oss-20b",
+    "percent_rewrite": 0,
+    "limit_per_run": 2,
+    "lockfile": "/tmp/codewalker.lock",
+    "respect_gitignore": true
+}

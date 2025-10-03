@@ -1,0 +1,1 @@
+2025/10/02 23:02:47 [error] 19078#19078: *2414 directory index of "/var/www/html/admin/php_mc/" is forbidden, client: 192.168.1.210, server: _, request: "GET /admin/php_mc/ HTTP/2.0", host: "192.168.1.152"

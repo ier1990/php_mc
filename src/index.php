@@ -39,6 +39,12 @@ $mc_array['protocol'] = $protocol;
 </head>
 <body>
 <div class="container-fluid">
+  <div class="row" style="margin-top:8px;margin-bottom:8px">
+    <div class="col-sm-12">
+      <a class="btn btn-default" href="codewalker.php" style="background:#222;color:#eee;border-color:#444">&larr; CodeWalker</a>
+      <a class="btn btn-default" href="codew_config.php" style="background:#222;color:#eee;border-color:#444">&larr; CodeWalker Configuration</a>
+    </div>
+  </div>
   <div class="row">
     <div class="col-sm-5 scroll-box">
       <div class="tree-label">📂 Directory Tree</div>
@@ -65,7 +71,17 @@ $mc_array['protocol'] = $protocol;
               echo '<a href="?tpage=' . urlencode($dir_path_entry) . '&filename=' . urlencode($entry) . '&view=true&dir=' . urlencode($mc_array['dir_path']) . '" style="color:lightgreen">' . htmlspecialchars($entry) . '</a> ';
               echo "<small style='color:#999'>[$perms | {$size} bytes | owner: $owner]</small> ";
               echo '<a href="' . $html_path . '" target="_blank">🔗</a> ';
-              echo '<a href="?tpage=custom.php&file=' . urlencode($dir_path_entry) . '&view=custom&dir=' . urlencode($mc_array['dir_path']) . '" style="color:#ffcc00">🔧</a>';
+              // Replace single wrench with dropdown
+              $admin_file = 'codewalker.php?view=file&path=' . urlencode($dir_path_entry);
+              $admin_queue = 'codewalker.php?view=queue&pre_add=1&path=' . urlencode($dir_path_entry);
+              echo '<span class="dropdown" style="position:relative;display:inline-block">';
+              echo '<a href="#" onclick="var m=this.nextElementSibling; m.style.display=(m.style.display==\'block\'?\'none\':\'block\'); return false;" title="Tools" style="color:#ffcc00">🔧</a>';
+              echo '<ul class="menu" style="display:none;position:absolute;left:0;top:1.2em;background:#222;border:1px solid #444;border-radius:6px;padding:.25em .5em;list-style:none;min-width:220px;z-index:5">';
+              echo '<li><a style="display:block;color:#eee;padding:.2em 0" href="?tpage=custom.php&file=' . urlencode($dir_path_entry) . '&view=custom&dir=' . urlencode($mc_array['dir_path']) . '">Run custom.php</a></li>';
+              echo '<li><a style="display:block;color:#eee;padding:.2em 0" href="'.$admin_file.'" target="_blank">Open DB file info</a></li>';
+              echo '<li><a style="display:block;color:#eee;padding:.2em 0" href="'.$admin_queue.'" target="_blank">Add to CodeWalker queue</a></li>';
+              echo '</ul>';
+              echo '</span>';
 
           }
       }

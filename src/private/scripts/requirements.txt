@@ -1,0 +1,6 @@
+# Minimal dependencies for CodeWalker (mc-local)
+# Python 3.9+
+
+requests>=2.28,<3
+# Optional: load .env files if present
+python-dotenv>=1.0,<2
