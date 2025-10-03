@@ -1,7 +1,13 @@
-# Ignore the SQLite DB file
-src/private/db/codewalker.db
+# Secrets
 src/private/.env
+src/private/.env.*
 
-# But keep the directory
-!src/private/db/
-!src/private/logs/
+# Databases anywhere
+*.db
+*.sqlite
+*.sqlite3
+*-wal
+*-shm
+
+# Logs anywhere (optional if you add per-dir rules below)
+*.log
