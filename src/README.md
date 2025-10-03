@@ -4,14 +4,13 @@ A lightweight companion UI to browse files, edit local CodeWalker config, and ju
 
 ## URLs
 
-- MC landing page: `/admin/php_mc/src/index.php`
-- File browser: `/admin/php_mc/src/mc.php?dir=/var/www/html`
-- Config editor: `/admin/php_mc/src/config.php`
-- Main Admin: `/admin/index.php`
+- Codewalker landing page: `/php_mc/src/codewalker.php`
+- File browser: `/php_mc/src/index.php?dir=/var/www/html`
+- Config editor: `/php_mc/src/codew_config.php`
 
 ## What lives here
 
-- `mc.php` — simple file browser with a tools dropdown per file:
+- `index.php` — simple file browser with a tools dropdown per file:
   - Run `custom.php` on the file
   - Open DB file info in Admin
   - Add file to CodeWalker queue
@@ -22,7 +21,7 @@ A lightweight companion UI to browse files, edit local CodeWalker config, and ju
 
 ## Editing the CodeWalker config
 
-Open `/admin/php_mc/src/config.php` to view or edit `private/codewalker.json`.
+Open `/php_mc/src/config.php` to view or edit `private/codewalker.json`.
 
 - Validate/format JSON before save
 - Backups are created as `codewalker.json.bak.YYYYMMDD_HHMMSS`
@@ -46,11 +45,11 @@ Example config (edit to match your environment):
 
 ## Queue integration
 
-From `mc.php`:
+From `index.php`:
 - For any file, use the wrench dropdown → “Add to CodeWalker queue” to queue it in Admin.
 - “Open DB file info” jumps to the Admin page for that file.
 
-In Admin (`/admin/index.php`):
+In Admin (codewalker.php`):
 - Use the Queue tab to see pending/done entries.
 - The CodeWalker (mc-local) walker can prioritize or only process these queued paths depending on `mode`.
 
@@ -75,3 +74,4 @@ These modes are read by the mc-local CodeWalker script (in `src/private/scripts/
 ---
 
 If you want a multi-DB selector or richer diffs/revert from backup, we can extend this UI. 
+
