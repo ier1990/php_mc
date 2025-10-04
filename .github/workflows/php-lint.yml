@@ -23,5 +23,5 @@ jobs:
       - name: Lint PHP files
         run: |
           set -e
-          find . -type f -name '*.php' -not -path './vendor/*' -print0 \
+          find . -type f -name '*.php' -not -path './vendor/*'  -not -path './old/*' -print0 \
             | xargs -0 -n1 php -l
