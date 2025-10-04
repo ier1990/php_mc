@@ -1,0 +1,7 @@
+[
+  {"_comment": "Recreated after merge conflict so this menu ships with the new PR."},
+  {"label": "CodeWalker", "url": "codewalker.php"},
+  {"label": "Personal Notes", "url": "notes.php"},
+  {"label": "MC Browser", "url": "index.php"},
+  {"label": "CodeWalker Configuration", "url": "codew_config.php"}
+]
