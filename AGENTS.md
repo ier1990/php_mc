@@ -145,3 +145,16 @@ git diff > /tmp/patch.diff
 - Use a friendly, concise tone.
 - Highlight blockers or open questions early.
 - Suggest logical follow-up actions when appropriate.
+
+
+## drop these into AGENTS.md (so codex stays on rails)
+
+- Compatibility target: “Code must run on PHP 7.4+; avoid features newer than 7.4 in shared libs. Validate on 8.2 locally.”
+
+- Do not touch: src/private/db/*, src/private/.env*, src/private/logs/* (write-only at runtime, not versioned).
+
+- Commit hygiene: single logical change per PR; include rollback note (git revert <sha>).
+
+- Security defaults: escape at sink, validate inputs, CSRF on state-changing forms, never log secrets.
+
+- Testing: at minimum, php -l on changed files; propose tests but don’t add heavy deps without approval.

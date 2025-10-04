@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd /var/www/html/admin/php_mc
+export CODEX_SECURE_MODE=1
+exec codex

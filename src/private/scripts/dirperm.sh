@@ -67,14 +67,14 @@ main() {
     run_cmd chmod 770 "$SCRIPTS_DIR/codewalker.py"
     run_cmd chmod 770 "$SCRIPTS_DIR/dirperm.sh"
 
-    # 5. Delete then Create cron‑hourly wrapper if it doesn't exist
-    rm -f "$CRON_HOURLY"
+    # 5. Create cron‑hourly wrapper if it doesn't exist
+    #rm -f "$CRON_HOURLY"
     if [[ ! -f "$CRON_HOURLY" ]]; then
         log "Creating hourly cron wrapper at $CRON_HOURLY"
         cp "$0" "$CRON_HOURLY"
         run_cmd chmod 770 "$CRON_HOURLY"
     else
-        log "Unable to delete Cron wrapper already present: $CRON_HOURLY"
+        log "Cron wrapper already present: $CRON_HOURLY"
     fi
 
     log "Permission normalisation complete."

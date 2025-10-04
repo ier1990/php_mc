@@ -1,0 +1,15 @@
+name: php-lint
+on: [push, pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: { php: ['7.4','8.2'] }  # baseline + your .152 CLI
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: ${{ matrix.php }} }
+      - name: Lint
+        run: |
+          find . -type f -name '*.php' -not -path './vendor/*' -print0 \
+            | xargs -0 -n1 php -l
