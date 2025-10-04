@@ -51,3 +51,5 @@ Created by [@ier1990](https://github.com/ier1990) and ChatGPT.
 
 
 
+
+[![Sponsor @ier1990](https://img.shields.io/badge/Sponsor-@ier1990-fuchsia)](https://github.com/sponsors/ier1990)
