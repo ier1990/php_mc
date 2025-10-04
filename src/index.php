@@ -42,6 +42,7 @@ $mc_array['protocol'] = $protocol;
   <div class="row" style="margin-top:8px;margin-bottom:8px">
     <div class="col-sm-12">
       <a class="btn btn-default" href="codewalker.php" style="background:#222;color:#eee;border-color:#444">&larr; CodeWalker</a>
+      <a class="btn btn-default" href="notes.php" style="background:#222;color:#eee;border-color:#444">&larr; Personal Notes</a>
       <a class="btn btn-default" href="codew_config.php" style="background:#222;color:#eee;border-color:#444">&larr; CodeWalker Configuration</a>
     </div>
   </div>
