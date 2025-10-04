@@ -43,6 +43,59 @@ if (!function_exists('ensure_csrf')) {
         return $_SESSION['csrf'];
     }
 }
+if (!function_exists('render_nav_menu')) {
+    /**
+     * Render a navigation menu based on mc_menu.json definitions.
+     *
+     * @param string|null $currentFile Optional override for the current script filename.
+     * @param string|null $menuFile    Optional override for the menu definition path.
+     */
+    function render_nav_menu(?string $currentFile = null, ?string $menuFile = null): string {
+        $menuFile = $menuFile ?: __DIR__ . '/mc_menu.json';
+
+        if ($currentFile === null) {
+            $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+            $currentFile = basename($requestPath);
+        }
+
+        $items = [];
+        if (is_file($menuFile) && is_readable($menuFile)) {
+            $json = file_get_contents($menuFile);
+            if ($json !== false) {
+                $data = json_decode($json, true);
+                if (is_array($data)) {
+                    $items = $data;
+                }
+            }
+        }
+
+        if (empty($items)) {
+            return '';
+        }
+
+        $links = [];
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $url = isset($item['url']) ? (string)$item['url'] : '';
+            $label = isset($item['label']) ? (string)$item['label'] : '';
+            if ($url === '' || $label === '') {
+                continue;
+            }
+            if ($currentFile !== '' && basename($url) === $currentFile) {
+                continue;
+            }
+            $links[] = '<a class="btn btn-default" href="' . h($url) . '" style="background:#222;color:#eee;border-color:#444">&larr; ' . h($label) . '</a>';
+        }
+
+        if (empty($links)) {
+            return '';
+        }
+
+        return '<div class="row" style="margin-top:8px;margin-bottom:8px"><div class="col-sm-12">' . implode(' ', $links) . '</div></div>';
+    }
+}
 if (!function_exists('login_required')) {
     function login_required(string $ADMIN_PASS): void {
         if ($ADMIN_PASS === '') return; // disabled

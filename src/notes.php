@@ -39,6 +39,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Security token error. Please reload and try again.';
     }
 
+    $deleteIdRaw = isset($_POST['delete_id']) ? (string)$_POST['delete_id'] : '';
+
+    if ($deleteIdRaw !== '') {
+        if (!ctype_digit($deleteIdRaw)) {
+            $errors[] = 'Invalid note reference for deletion.';
+        } elseif ($pdo instanceof PDO && empty($errors)) {
+            try {
+                $stmt = $pdo->prepare('DELETE FROM notes WHERE id = :id');
+                $stmt->execute([':id' => (int)$deleteIdRaw]);
+                if ($stmt->rowCount() > 0) {
+                    header('Location: ' . $_SERVER['PHP_SELF'] . '?deleted=1');
+                    exit;
+                }
+                $errors[] = 'Note not found or already deleted.';
+            } catch (Throwable $e) {
+                $errors[] = 'Failed to delete note: ' . h($e->getMessage());
+            }
+        }
+    } else {
+        $title = trim((string)($_POST['title'] ?? ''));
+        $body = (string)($_POST['body'] ?? '');
+        $tags = trim((string)($_POST['tags'] ?? ''));
+
+        $unsaved = ['title' => $title, 'body' => $body, 'tags' => $tags];
+
+        if ($title === '') {
+            $errors[] = 'Title is required.';
+        }
+        if (trim($body) === '') {
+            $errors[] = 'Note body cannot be empty.';
+        }
+
+        if (empty($errors) && $pdo instanceof PDO) {
+            try {
+                $stmt = $pdo->prepare('INSERT INTO notes (title, body, tags) VALUES (:title, :body, :tags)');
+                $stmt->execute([
+                    ':title' => $title,
+                    ':body' => $body,
+                    ':tags' => $tags,
+                ]);
+                unset($_SESSION['notes_unsaved']);
+                header('Location: ' . $_SERVER['PHP_SELF'] . '?saved=1');
+                exit;
+            } catch (Throwable $e) {
+                $errors[] = 'Failed to save note: ' . h($e->getMessage());
+                $_SESSION['notes_unsaved'] = $unsaved;
+            }
+        } else {
+            $_SESSION['notes_unsaved'] = $unsaved;
+        }
+
     $title = trim((string)($_POST['title'] ?? ''));
     $body = (string)($_POST['body'] ?? '');
     $tags = trim((string)($_POST['tags'] ?? ''));
@@ -69,6 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } else {
         $_SESSION['notes_unsaved'] = $unsaved;
+
     }
 }
 
