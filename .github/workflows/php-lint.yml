@@ -1,15 +1,27 @@
 name: php-lint
-on: [push, pull_request]
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
 jobs:
   lint:
+    name: PHP lint
     runs-on: ubuntu-latest
     strategy:
-      matrix: { php: ['7.4','8.2'] }  # baseline + your .152 CLI
+      fail-fast: false
+      matrix:
+        php: [ '7.4', '8.2' ]
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
-        with: { php-version: ${{ matrix.php }} }
-      - name: Lint
+        with:
+          php-version: ${{ matrix.php }}
+      - name: Lint PHP files
         run: |
+          set -e
           find . -type f -name '*.php' -not -path './vendor/*' -print0 \
             | xargs -0 -n1 php -l
