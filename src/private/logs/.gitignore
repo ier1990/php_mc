@@ -1,6 +1,4 @@
-# Ignore logs by default
 *.log
 *.log.*
-# Keep these sentinel/docs so the folder exists in Git
 !.gitignore
 !README.md
