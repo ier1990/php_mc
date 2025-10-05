@@ -63,11 +63,15 @@ main() {
     # 3. Set file permissions recursively
     find "$PROJECT_ROOT" -type f -exec chmod "$FILE_PERM" {} +
 
-    # 4. Ensure script files are executable
-    run_cmd chmod 770 "$SCRIPTS_DIR/codewalker.py"
-    run_cmd chmod 770 "$SCRIPTS_DIR/dirperm.sh"
+    # 4. Ensure files are executable    
+    run_cmd chmod 770 "$SCRIPTS_DIR/*"
+    run_cmd chmod 0755 "$PROJECT_ROOT/.githooks/*"
 
-    # 5. Create cron‑hourly wrapper if it doesn't exist
+    # 5. Git sentinels (keep dirs tracked, ignore contents)
+    printf '*\n!.gitignore\n' > "$PROJECT_ROOT/src/private/db/.gitignore"
+    printf '*.log\n*.log.*\n!.gitignore\n!README.md\n' > "$PROJECT_ROOT/src/private/logs/.gitignore"
+
+    # 6. Create cron‑hourly wrapper if it doesn't exist
     #rm -f "$CRON_HOURLY"
     if [[ ! -f "$CRON_HOURLY" ]]; then
         log "Creating hourly cron wrapper at $CRON_HOURLY"
