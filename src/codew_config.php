@@ -45,12 +45,7 @@ $startDir = getp('dir', $docRoot ?: (isset($candidates[0]) ? $candidates[0] : ge
   <div class="wrap">
     <div class="card">
       <h1>PHP MC Tools</h1>
-      <div class="row" style="margin-top:8px">
-        <a class="btn" href="index.php?dir=<?php echo urlencode($startDir); ?>">↩ Back to MC Browser</a>
-        <a class="btn secondary" href="codewalker.php">Back to CodeWalker</a>
-        <a class="btn secondary" href="custom.php">Run custom.php</a>
-        <a class="btn secondary" href="config.php">Edit codewalker.json</a>
-      </div>
+<?php echo render_nav_menu(basename(__FILE__)); ?>
     </div>
 
     <div class="card">

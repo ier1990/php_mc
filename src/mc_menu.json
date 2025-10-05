@@ -3,5 +3,6 @@
   {"label": "CodeWalker", "url": "codewalker.php"},
   {"label": "Personal Notes", "url": "notes.php"},
   {"label": "MC Browser", "url": "index.php"},
-  {"label": "CodeWalker Configuration", "url": "codew_config.php"}
+  {"label": "MC Configuration", "url": "codew_config.php"},
+  {"label": "Edit json", "url": "config.php"}
 ]

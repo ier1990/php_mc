@@ -5,6 +5,8 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+require_once __DIR__ . '/utils.php';
+
 $mc_array = array();
 $mc_array['exclude_list'] = array(".", "..", ".git", ".svn");
 $mc_array['HTTP_HOST'] = $_SERVER['HTTP_HOST'];
@@ -39,13 +41,7 @@ $mc_array['protocol'] = $protocol;
 </head>
 <body>
 <div class="container-fluid">
-  <div class="row" style="margin-top:8px;margin-bottom:8px">
-    <div class="col-sm-12">
-      <a class="btn btn-default" href="codewalker.php" style="background:#222;color:#eee;border-color:#444">&larr; CodeWalker</a>
-      <a class="btn btn-default" href="notes.php" style="background:#222;color:#eee;border-color:#444">&larr; Personal Notes</a>
-      <a class="btn btn-default" href="codew_config.php" style="background:#222;color:#eee;border-color:#444">&larr; CodeWalker Configuration</a>
-    </div>
-  </div>
+<?php echo render_nav_menu(basename(__FILE__)); ?>
   <div class="row">
     <div class="col-sm-5 scroll-box">
       <div class="tree-label">📂 Directory Tree</div>
