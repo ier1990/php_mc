@@ -11,3 +11,6 @@ src/private/.env.*
 
 # Logs anywhere (optional if you add per-dir rules below)
 *.log
+# Python bytecode / cache
+**/__pycache__/
+**/*.py[cod]
