@@ -1,4 +1,5 @@
 <?php
+// NOTE: Reapplying notes UI after prior merge failure so it can be PR'd again.
 require_once __DIR__ . '/utils.php';
 require_once __DIR__ . '/Parsedown.php';
 
@@ -89,43 +90,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $_SESSION['notes_unsaved'] = $unsaved;
         }
-
-    $title = trim((string)($_POST['title'] ?? ''));
-    $body = (string)($_POST['body'] ?? '');
-    $tags = trim((string)($_POST['tags'] ?? ''));
-
-    $unsaved = ['title' => $title, 'body' => $body, 'tags' => $tags];
-
-    if ($title === '') {
-        $errors[] = 'Title is required.';
-    }
-    if (trim($body) === '') {
-        $errors[] = 'Note body cannot be empty.';
-    }
-
-    if (empty($errors) && $pdo instanceof PDO) {
-        try {
-            $stmt = $pdo->prepare('INSERT INTO notes (title, body, tags) VALUES (:title, :body, :tags)');
-            $stmt->execute([
-                ':title' => $title,
-                ':body' => $body,
-                ':tags' => $tags,
-            ]);
-            unset($_SESSION['notes_unsaved']);
-            header('Location: ' . $_SERVER['PHP_SELF'] . '?saved=1');
-            exit;
-        } catch (Throwable $e) {
-            $errors[] = 'Failed to save note: ' . h($e->getMessage());
-            $_SESSION['notes_unsaved'] = $unsaved;
-        }
-    } else {
-        $_SESSION['notes_unsaved'] = $unsaved;
-
     }
 }
 
 if (isset($_GET['saved'])) {
     $status = 'Note saved successfully.';
+} elseif (isset($_GET['deleted'])) {
+    $status = 'Note deleted successfully.';
 }
 
 if (is_array($unsaved)) {
@@ -180,6 +151,8 @@ $parser->setSafeMode(true);
         textarea { min-height: 160px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
         .btn { background:#1a2246; color:#fff; border:1px solid #3af; border-radius:10px; padding:10px 16px; cursor:pointer; font-weight:600; }
         .btn:hover { background:#233067; }
+        .btn-danger { background:#552028; border-color:#aa3344; }
+        .btn-danger:hover { background:#6d2732; }
         .search-bar { display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
         .search-bar input[type="text"] { flex:1; min-width:200px; }
         .status { margin-bottom: 18px; padding: 10px 12px; border-radius: 8px; background:#12351a; border:1px solid #2e6b3a; }
@@ -192,17 +165,12 @@ $parser->setSafeMode(true);
         .note-content code { background:#1d274b; padding:2px 4px; border-radius:6px; }
         .notes-empty { text-align:center; padding:32px; border:1px dashed #2d3a5c; border-radius:12px; color:#7f8db3; }
         a { color:#74b7ff; }
+        .note-actions { margin-top:12px; display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; }
     </style>
 </head>
 <body>
+<?php echo render_nav_menu(basename(__FILE__)); ?>
 <div class="wrap">
-  <div class="row" style="margin-top:8px;margin-bottom:8px">
-    <div class="col-sm-12">
-      <a class="btn btn-default" href="index.php" style="background:#222;color:#eee;border-color:#444">&larr; MC Explorer</a>
-      <a class="btn btn-default" href="codewalker.php" style="background:#222;color:#eee;border-color:#444">&larr; CodeWalker</a>
-      <a class="btn btn-default" href="codew_config.php" style="background:#222;color:#eee;border-color:#444">&larr; CodeWalker Configuration</a>
-    </div>
-  </div>    
     <h1>Personal Notes</h1>
     <div class="card">
         <form method="post">
@@ -266,6 +234,13 @@ $parser->setSafeMode(true);
                     </div>
                     <div class="note-content">
                         <?php echo $parser->text($note['body']); ?>
+                    </div>
+                    <div class="note-actions">
+                        <form method="post" onsubmit="return confirm('Delete this note?');">
+                            <input type="hidden" name="csrf" value="<?php echo h($csrf); ?>">
+                            <input type="hidden" name="delete_id" value="<?php echo (int)$note['id']; ?>">
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
                     </div>
                 </div>
             <?php endforeach; ?>

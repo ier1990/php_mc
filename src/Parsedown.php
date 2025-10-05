@@ -1,5 +1,6 @@
 <?php
 
+// NOTE: Reintroduced after merge cleanup so the notes feature can be re-PR'd.
 // Lightweight Parsedown-like renderer for Markdown content.
 // Provides a subset of Parsedown features needed for notes.php while
 // remaining dependency-free and PHP 7.4 compatible.
