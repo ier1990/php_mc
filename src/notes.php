@@ -90,6 +90,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $_SESSION['notes_unsaved'] = $unsaved;
         }
+
+    $title = trim((string)($_POST['title'] ?? ''));
+    $body = (string)($_POST['body'] ?? '');
+    $tags = trim((string)($_POST['tags'] ?? ''));
+
+    $unsaved = ['title' => $title, 'body' => $body, 'tags' => $tags];
+
+    if ($title === '') {
+        $errors[] = 'Title is required.';
+    }
+    if (trim($body) === '') {
+        $errors[] = 'Note body cannot be empty.';
+    }
+
+    if (empty($errors) && $pdo instanceof PDO) {
+        try {
+            $stmt = $pdo->prepare('INSERT INTO notes (title, body, tags) VALUES (:title, :body, :tags)');
+            $stmt->execute([
+                ':title' => $title,
+                ':body' => $body,
+                ':tags' => $tags,
+            ]);
+            unset($_SESSION['notes_unsaved']);
+            header('Location: ' . $_SERVER['PHP_SELF'] . '?saved=1');
+            exit;
+        } catch (Throwable $e) {
+            $errors[] = 'Failed to save note: ' . h($e->getMessage());
+            $_SESSION['notes_unsaved'] = $unsaved;
+        }
+    } else {
+        $_SESSION['notes_unsaved'] = $unsaved;
+
     }
 }
 
@@ -171,6 +203,17 @@ $parser->setSafeMode(true);
 <body>
 <?php echo render_nav_menu(basename(__FILE__)); ?>
 <div class="wrap">
+    </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="row" style="margin-top:8px;margin-bottom:8px">
+    <div class="col-sm-12">
+      <a class="btn btn-default" href="index.php" style="background:#222;color:#eee;border-color:#444">&larr; MC Explorer</a>
+      <a class="btn btn-default" href="codewalker.php" style="background:#222;color:#eee;border-color:#444">&larr; CodeWalker</a>
+      <a class="btn btn-default" href="codew_config.php" style="background:#222;color:#eee;border-color:#444">&larr; CodeWalker Configuration</a>
+    </div>
+  </div>    
     <h1>Personal Notes</h1>
     <div class="card">
         <form method="post">

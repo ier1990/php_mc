@@ -134,14 +134,25 @@ function extractMetadata(array $info, string $path): array
  */
 function mapHeaderToFileType(string $headerHex): string
 {
-    return match ($headerHex) {
-        '89504E47' => 'PNG Image',
-        '25504446' => 'PDF Document',
-        'FFD8FFE0', 'FFD8FFE1', 'FFD8FFE2' => 'JPEG Image',
-        '47494638' => 'GIF Image',
-        '504B0304' => 'ZIP Archive or DOCX/XLSX',
-        default   => 'Text or Unknown',
-    };
+    // 7.4-safe replacement for PHP 8 'match'
+    $headerHex = strtoupper(substr($headerHex, 0, 8));
+
+    switch ($headerHex) {
+        case '89504E47':
+            return 'PNG Image';
+        case '25504446':
+            return 'PDF Document';
+        case 'FFD8FFE0':
+        case 'FFD8FFE1':
+        case 'FFD8FFE2':
+            return 'JPEG Image';
+        case '47494638':
+            return 'GIF Image';
+        case '504B0304':
+            return 'ZIP Archive or DOCX/XLSX';
+        default:
+            return 'Text or Unknown';
+    }
 }
 
 /**
