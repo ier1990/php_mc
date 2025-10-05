@@ -11,12 +11,30 @@
 
 set -euo pipefail
 
+
+# if not root, exit
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root"
+   exit 1
+fi
+
 # Backup last 200 lines of nginx error log to ai summary log
-tail -n 200 /var/log/nginx/error.log > /var/www/html/admin/php_mc/src/private/logs/error.log
+# detects if apache or nginx is used
+if [ -f /var/log/apache2/error.log ]; then
+    tail -n 200 /var/log/apache2/error.log > /var/www/html/admin/php_mc/src/private/logs/error.log
+elif [ -f /var/log/httpd/error_log ]; then
+    tail -n 200 /var/log/httpd/error_log > /var/www/html/admin/php_mc/src/private/logs/error.log
+elif [ -f /var/log/nginx/error.log ]; then
+    tail -n 200 /var/log/nginx/error.log > /var/www/html/admin/php_mc/src/private/logs/error.log
+else
+    echo "No web server error log found."
+    #exit 1
+fi
 
 # --------------------------------------------------------------------------- #
 # Configuration
 # --------------------------------------------------------------------------- #
+
 
 # Base directory of the PHP‑MC project
 PROJECT_ROOT="/var/www/html/admin/php_mc"
@@ -69,14 +87,20 @@ main() {
 
     # 5. Git sentinels (keep dirs tracked, ignore contents)
     printf '*\n!.gitignore\n' > "$PROJECT_ROOT/src/private/db/.gitignore"
-    printf '*.log\n*.log.*\n!.gitignore\n!README.md\n' > "$PROJECT_ROOT/src/private/logs/.gitignore"
+    printf '*.log\n*.log.*\n!.gitignore\n!README.md\n' > "$PROJECT_ROOT/src/private/logs/.gitignore"    
 
-    # 6. Create cron‑hourly wrapper if it doesn't exist
-    #rm -f "$CRON_HOURLY"
+    # 6. Delete cron‑hourly wrapper if it doesn't exist
+    if [[ -f "$CRON_HOURLY" ]]; then
+        log "Deleting hourly cron wrapper at $CRON_HOURLY"
+        rm -f "$CRON_HOURLY"
+    fi
+
+    # 7. Create cron‑hourly wrapper if it doesn't exist
     if [[ ! -f "$CRON_HOURLY" ]]; then
         log "Creating hourly cron wrapper at $CRON_HOURLY"
         cp "$0" "$CRON_HOURLY"
         run_cmd chmod 770 "$CRON_HOURLY"
+        run_cmd chown -R -c "${OWNER_USER}:${OWNER_GROUP}" "$CRON_HOURLY"
     else
         log "Cron wrapper already present: $CRON_HOURLY"
     fi

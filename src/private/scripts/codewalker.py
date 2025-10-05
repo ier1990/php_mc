@@ -437,8 +437,8 @@ def llm_chat(cfg: dict, messages: list[dict], model: str | None = None) -> tuple
     model = model or cfg.get("model") or "gemma3:4b"
 
     def _try_lmstudio():
-        url = (cfg.get("base_url") or os.getenv("LLM_BASE_URL") or "http://192.168.1.210:1234") + "/v1/chat/completions"
-        print(f"LM Studio URL: {url}")
+        url = (cfg.get("base_url") or os.getenv("LLM_BASE_URL") or "") + "/v1/chat/completions"        
+        print(f"LM Studio URL: {url} (model: {model})")
         payload = {"model": model, "messages": messages, "temperature": 0.2}
         headers = {"Content-Type": "application/json"}
         if cfg.get("api_key") or os.getenv("LLM_API_KEY"):
@@ -451,7 +451,7 @@ def llm_chat(cfg: dict, messages: list[dict], model: str | None = None) -> tuple
         return text, {"backend": "lmstudio", "raw": j, "usage": j.get("usage")}
 
     def _try_ollama():
-        url = (cfg.get("base_url") or "http://192.168.1.152:11434") + "/api/chat"
+        url = (cfg.get("base_url") or "") + "/api/chat"
         print(f"Ollama URL: {url}")
         # Ollama uses gemma3:4b
         model = "gemma3:4b"
