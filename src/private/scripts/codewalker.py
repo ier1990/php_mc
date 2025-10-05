@@ -72,6 +72,14 @@ CONFIG_TEMPLATE = {
     "file_types": ["php", "py", "sh", "log"],
     "actions": ["summarize", "rewrite"],
     "rewrite_prompt": "Make this code more readable and modular.",
+    # Optional external prompt file (JSON) to extend/replace internal pools.
+    # Example structure (prompt.json):
+    # {
+    #   "rewrite_prompts": { "A": ["..."], "B": ["..."], "EXTRA": ["..."] },
+    #   "notes": "free form"
+    # }
+    # or simply: { "rewrite_prompts": ["prompt1", "prompt2"] }
+    "prompt_file": "/var/www/html/admin/php_mc/src/private/prompt.json",
     "db_path": "/var/www/html/admin/php_mc/src/private/db/codewalker.db",
     "log_path": "/var/www/html/admin/php_mc/src/private/logs/codewalker.log",
     "exclude_dirs": [
@@ -93,127 +101,45 @@ CONFIG_TEMPLATE = {
     "respect_gitignore": True,
 }
 
-EXTRA_REWRITE_PROMPTS = [
-    "Refactor to smaller pure functions and add docstrings; preserve behavior.",
-    "Improve readability, reduce side effects, and add clear error handling.",
-    "Modernize style, add type hints where possible, keep output identical.",
-    "Eliminate dead code and TODOs safely; keep a single source of truth for config.",
-]
-
-PROMPT_POOL_A = [
-    "Refactor to smaller pure functions and add docstrings; preserve behavior.",
-    "Improve readability, reduce side effects, and add clear error handling.",
-    "Modernize style, add type hints where possible, keep output identical.",
-    "Eliminate dead code and TODOs safely; keep a single source of truth for config.",
-]
-
-PROMPT_POOL_B = [
-    "Improve readability by adding comments, clarifying variable names, and simplifying control flow.",
-    "Reduce side effects and improve function isolation; make each block easier to test.",
-    "Add clear error handling and input validation; fail gracefully and log meaningfully.",
-    "Remove unused variables, unreachable code, and redundant logic; preserve core behavior.",
-    "Organize code into logical sections with headers; improve visual structure and flow.",
-    "Replace magic numbers and hardcoded strings with named constants or config values.",
-    "Ensure consistent formatting and indentation; align with project style guide.",
-    "Add logging where appropriate to aid debugging and trace execution paths.",
-    "Modularize repeated code into reusable functions; avoid duplication.",
-]
-
-# You can use newline strings…
-PROMPTS_A = """
-Refactor to smaller pure functions and add docstrings; preserve behavior.
-Improve readability, reduce side effects, and add clear error handling.
-Modernize style, add type hints where possible, keep output identical.
-Eliminate dead code and TODOs safely; keep a single source of truth for config.
-""".strip()
-
-PROMPTS_B = """
-Improve readability by adding comments, clarifying variable names, and simplifying control flow.
-Reduce side effects and improve function isolation; make each block easier to test.
-Add clear error handling and input validation; fail gracefully and log meaningfully.
-Remove unused variables, unreachable code, and redundant logic; preserve core behavior.
-Organize code into logical sections with headers; improve visual structure and flow.
-Replace magic numbers and hardcoded strings with named constants or config values.
-Ensure consistent formatting and indentation; align with project style guide.
-Add logging where appropriate to aid debugging and trace execution paths.
-Modularize repeated code into reusable functions; avoid duplication.
-""".strip()
-
-# …or plain Python lists (both forms are supported)
-# PROMPTS_A = [
-#     "Refactor to smaller pure functions and add docstrings; preserve behavior.",
-#     "Improve readability, reduce side effects, and add clear error handling.",
-#     "Modernize style, add type hints where possible, keep output identical.",
-#     "Eliminate dead code and TODOs safely; keep a single source of truth for config.",
-# ]
+## Legacy prompt pools removed; prompts now sourced solely from prompt.json.
 
 # ---------------------- Utils ----------------------
-def _normalize_prompts(*sources):
-    """Accept str (newline-separated) or list[str]; strip, drop empties, de-dupe (preserve order)."""
-    pool = []
-    for src in sources:
-        if not src:
-            continue
-        if isinstance(src, str):
-            lines = [s.strip() for s in src.replace("\r\n", "\n").split("\n")]
-        else:
-            lines = [str(s).strip() for s in src]
-        pool.extend([s for s in lines if s])
-    # de-dupe
-    seen, out = set(), []
-    for s in pool:
-        if s not in seen:
-            seen.add(s)
-            out.append(s)
-    return out
-
-def pick_rewrite_prompt(cfg, file_path=None):
-    # build a flat pool with your A + B + rewrite_prompt
-    rp = (cfg.get("rewrite_prompt") or "").strip()
-    pool = [*PROMPT_POOL_A, *PROMPT_POOL_B]
-    if rp: pool.append(rp)
-    pool = [s.strip() for s in pool if s and s.strip()]
-    # FULLY RANDOM: no per-file seeding
-    extra = random.choice(pool) if pool else "Make this code more readable and modular."
-    prompt_used = f"{REWRITE_INSTR_PREFIX} {extra}"
-    return extra, prompt_used
-
-def pick_rewrite_prompt_deterministic(cfg, *, strategy="flat", weights=None, file_path=None):
-    """
-    strategy: 'flat' (equal per prompt across all pools) or 'by_pool'
-    weights:  dict like {'A': 1, 'B': 2} used only with 'by_pool'
-    file_path: if provided, selection is deterministic per file
-    """
-    rp = (cfg.get("rewrite_prompt") or "").strip()
-
-    A = _normalize_prompts(PROMPTS_A)
-    B = _normalize_prompts(PROMPTS_B)
-
-    if strategy == "by_pool":
-        pools = [("A", A), ("B", B)]
-        pools = [(n, p) for (n, p) in pools if p]  # drop empty
-        if not pools:
-            pool = _normalize_prompts(rp) or ["Make this code more readable and modular."]
-        else:
-            w = [ (weights or {}).get(n, 1) for (n, _) in pools ]
-            idx = random.choices(range(len(pools)), weights=w, k=1)[0]
-            pool = pools[idx][1]
-            if rp:
-                pool = _normalize_prompts(pool, [rp])
-    else:
-        # flat = equal chance per prompt across A + B (+ rewrite_prompt if present)
-        pool = _normalize_prompts(A, B, [rp] if rp else None) or \
-               ["Make this code more readable and modular."]
-
-    # deterministic option per file (stable style across runs)
-    rng = random if not cfg.get("deterministic_per_file") else random.Random(
-        hashlib.sha256(file_path.encode()).hexdigest()[:16]
-    )
-    
-    extra = rng.choice(pool)    
-
-    prompt_used = f"{REWRITE_INSTR_PREFIX} {extra}"
-    return extra, prompt_used
+def load_prompt_list(cfg: dict) -> list[str]:
+    """Return a flat list of prompt texts from prompt.json (new schema)."""
+    path = cfg.get("prompt_file")
+    if not path or not os.path.isfile(path):
+        # fallback to single rewrite_prompt if json missing
+        rp = (cfg.get("rewrite_prompt") or "Make this code more readable and modular.").strip()
+        return [rp]
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        out: list[str] = []
+        if isinstance(data, dict) and isinstance(data.get("prompts"), list):
+            for obj in data.get("prompts", []):
+                if isinstance(obj, dict):
+                    txt = str(obj.get("text") or "").strip()
+                    if txt:
+                        out.append(txt)
+        # Backward compatibility (legacy formats)
+        elif isinstance(data, dict) and data.get("rewrite_prompts"):
+            rp = data.get("rewrite_prompts")
+            if isinstance(rp, list):
+                out.extend([str(x).strip() for x in rp if str(x).strip()])
+            elif isinstance(rp, dict):
+                for _, arr in rp.items():
+                    if isinstance(arr, list):
+                        out.extend([str(x).strip() for x in arr if str(x).strip()])
+        # Deduplicate preserving order
+        seen = set(); final = []
+        for p in out:
+            if p and p not in seen:
+                seen.add(p); final.append(p)
+        #logging.info("Loaded %d prompts from %s", len(final), path)        
+        return final or [ (cfg.get("rewrite_prompt") or "Make this code more readable and modular.").strip() ]
+    except Exception as e:
+        logging.warning(f"Failed to load prompts {path}: {e}")
+        return [ (cfg.get("rewrite_prompt") or "Make this code more readable and modular.").strip() ]
 
 def load_env():
     """Load .env from /var/www/html/admin/php_mc/src/private/.env if present, without failing if missing."""
@@ -650,6 +576,11 @@ def extract_first_codeblock(text: str) -> tuple[str, str] | None:
     return lang, body
 
 
+# ---------------------- External Prompt Loading ----------------------
+
+## Legacy load_external_prompts removed in favor of simple load_prompt_list.
+
+
 # ---------------------- Main run ----------------------
 
 def run_once(cfg: dict) -> None:
@@ -726,18 +657,13 @@ def run_once(cfg: dict) -> None:
                         {"role": "user", "content": file_meta + "\nCONTENT:\n```" + ext + "\n" + payload + "\n```"},
                     ]
                     prompt_used = SUMMARIZE_INSTR
-                else:                    
-                    # choose a prompt (flat distribution across all prompts; deterministic per file)
-                    extra, prompt_used = pick_rewrite_prompt_deterministic(
-                        cfg,
-                        strategy="flat",          # or "by_pool"
-                        weights={"A": 1, "B": 2}, # only used if strategy="by_pool"
-                        file_path=path            # makes selection stable for this file
-                    )
-
-                    # fence-safety if content may include ```
+                else:
+                    prompts = load_prompt_list(cfg)
+                    chosen = random.choice(prompts) if prompts else (cfg.get("rewrite_prompt") or "Make this code more readable and modular.")
+                    logging.info("Using rewrite prompt: %s", chosen)
+                    prompt_used = f"{REWRITE_INSTR_PREFIX} {chosen}".strip()
+                    #logging.info("Using rewrite prompt: %s", prompt_used)
                     safe_payload = payload.replace("```", "``\\`")
-
                     messages = [
                         {"role": "system", "content": prompt_used},
                         {"role": "user", "content": f"{file_meta}\nRewrite the entire file below.\n```{ext}\n{safe_payload}\n```"},

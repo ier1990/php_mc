@@ -1,6 +1,6 @@
 {
     "name": "CodeWalker",
-    "mode": "que",
+    "mode": "cron",
     "scan_path": "/var/www/html/admin/php_mc",
     "write_root": "/var/www/html/admin/php_mc",
     "file_types": [
@@ -33,11 +33,11 @@
     "exclude_files": [
         "codewalker.py"
     ],
-    "max_filesize_kb": 128,
+    "max_filesize_kb": 34,
     "log_tail_lines": 200,
     "backend": "lmstudio",
     "model": "openai/gpt-oss-20b",
-    "percent_rewrite": 0,
+    "percent_rewrite": 100,
     "limit_per_run": 2,
     "lockfile": "/tmp/codewalker.lock",
     "respect_gitignore": true

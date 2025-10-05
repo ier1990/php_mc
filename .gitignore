@@ -14,3 +14,4 @@ src/private/.env.*
 # Python bytecode / cache
 **/__pycache__/
 **/*.py[cod]
+src/private/scripts/__pycache__/codewalker.cpython-311.pyc

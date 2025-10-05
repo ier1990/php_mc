@@ -1,0 +1,95 @@
+{
+  "_meta": { "version": 2, "updated": "2025-10-05", "format": "weighted-prompts" },
+  "prompts": [
+    {
+      "id": "general_codex",
+      "text": "You are a careful coding assistant. Draft a brief plan, make small diffs, and explain risks.",
+      "weight": 3,
+      "tags": ["general", "assistant"]
+    },
+    {
+      "id": "security_review",
+      "text": "Before coding, list potential security risks (XSS, CSRF, injection). Then propose mitigations.",
+      "weight": 1,
+      "tags": ["security", "review"]
+    },
+    {
+      "id": "php_compat",
+      "text": "Target PHP 7.4 compatibility. Avoid nullsafe, match(), attributes, union types.",
+      "weight": 2,
+      "tags": ["php", "compat"]
+    },
+    {
+      "id": "refactor_pure_functions",
+      "text": "Refactor to smaller pure functions and add docstrings; preserve behavior.",
+      "weight": 2,
+      "tags": ["refactor", "clarity"]
+    },
+    {
+      "id": "improve_readability_reduce_side_effects",
+      "text": "Improve readability, reduce side effects, and add clear error handling.",
+      "weight": 2,
+      "tags": ["readability", "error-handling"]
+    },
+    {
+      "id": "modernize_style_types",
+      "text": "Modernize style, add type hints where possible, keep output identical.",
+      "weight": 1,
+      "tags": ["style", "types"]
+    },
+    {
+      "id": "eliminate_dead_code",
+      "text": "Eliminate dead code and TODOs safely; keep a single source of truth for config.",
+      "weight": 1,
+      "tags": ["cleanup"]
+    },
+    {
+      "id": "log_analysis_readability",
+      "text": "Organize code into logical sections with headers; improve visual structure and flow.",
+      "weight": 1,
+      "tags": ["organization"]
+    },
+    {
+      "id": "replace_magic_numbers",
+      "text": "Replace magic numbers and hardcoded strings with named constants or config values.",
+      "weight": 1,
+      "tags": ["constants", "cleanup"]
+    },
+    {
+      "id": "consistent_formatting",
+      "text": "Ensure consistent formatting and indentation; align with project style guide.",
+      "weight": 1,
+      "tags": ["style"]
+    },
+    {
+      "id": "logging_enhancement",
+      "text": "Add logging where appropriate to aid debugging and trace execution paths.",
+      "weight": 1,
+      "tags": ["logging", "observability"]
+    },
+    {
+      "id": "modularize_reuse",
+      "text": "Modularize repeated code into reusable functions; avoid duplication.",
+      "weight": 2,
+      "tags": ["refactor", "reuse"]
+    },
+    {
+      "id": "add_error_validation",
+      "text": "Add clear error handling and input validation; fail gracefully and log meaningfully.",
+      "weight": 2,
+      "tags": ["error-handling", "validation"]
+    },
+    {
+      "id": "reduce_side_effects_isolation",
+      "text": "Reduce side effects and improve function isolation; make each block easier to test.",
+      "weight": 2,
+      "tags": ["testability", "isolation"]
+    },
+    {
+      "id": "remove_unused_redundant",
+      "text": "Remove unused variables, unreachable code, and redundant logic; preserve core behavior.",
+      "weight": 1,
+      "tags": ["cleanup", "safety"]
+    }
+  ]
+}
