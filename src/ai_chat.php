@@ -85,13 +85,13 @@ if (!function_exists('build_chat_json_body')) {
 			'stream' => false,
 			'temperature' => $temperature,
 			'messages' => [
-				[ 'role' => 'system', 'content' => 'You are a helpful assistant that replies in English.' ],
+				[ 'role' => 'system', 'content' => "You are a helpful assistant named $model. You reply in English and tag your outputs with your name." ],
 				[ 'role' => 'user', 'content' => 'Hello' ],
 			],
 			'options' => [
 				'num_ctx' => $numCtx,
 			],
-			'tags' => [ 'lang' => 'en', 'source' => 'php_mc' ],
+			'tags' => [ 'lang' => 'en', 'source' => 'php_mc', 'author' => $model ],
 		], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 	}
 }
