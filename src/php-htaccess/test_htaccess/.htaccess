@@ -1,0 +1,4 @@
+AuthType Basic
+AuthName "Restricted Area"
+AuthUserFile /var/www/html/admin/php_mc/src/private/passwords/.htpasswd
+Require valid-user

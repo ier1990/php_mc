@@ -1,0 +1,5 @@
+<?php
+
+echo "Auth Worked!!";
+
+?>

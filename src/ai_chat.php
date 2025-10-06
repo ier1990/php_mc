@@ -4,87 +4,195 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+// Start session early for CSRF persistence
+if (session_status() !== PHP_SESSION_ACTIVE) @session_start();
+
 require_once __DIR__ . '/utils.php';
+
+// Helper functions (restored after manual edits)
+if (!function_exists('is_json')) {
+    function is_json($str) {
+        if (!is_string($str) || $str === '') return false;
+        json_decode($str);
+        return json_last_error() === JSON_ERROR_NONE;
+    }
+}
+if (!function_exists('pretty_json')) {
+    function pretty_json($str) {
+        $decoded = json_decode($str, true);
+        if (json_last_error() !== JSON_ERROR_NONE) return $str;
+        return json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    }
+}
+if (!function_exists('normalize_newlines')) {
+    function normalize_newlines($s) { return str_replace(["\r\n", "\r"], "\n", (string)$s); }
+}
+if (!function_exists('parse_headers_input')) {
+    function parse_headers_input($text) {
+        $headers = [];
+        $text = normalize_newlines((string)$text);
+        foreach (explode("\n", $text) as $line) {
+            $line = trim($line);
+            if ($line === '' || strpos($line, ':') === false) continue;
+            $parts = explode(':', $line, 2);
+            $name = trim($parts[0]);
+            $value = trim($parts[1]);
+            if ($name !== '') $headers[] = $name . ': ' . $value;
+        }
+        return $headers;
+    }
+}
+if (!function_exists('kv_text_to_array')) {
+    function kv_text_to_array($text) {
+        $out = [];
+        $text = normalize_newlines((string)$text);
+        foreach (explode("\n", $text) as $line) {
+            $line = trim($line);
+            if ($line === '' || $line[0] === '#') continue;
+            $eq = strpos($line, '=');
+            if ($eq === false) { $out[$line] = ''; continue; }
+            $k = trim(substr($line, 0, $eq));
+            $v = trim(substr($line, $eq+1));
+            $out[$k] = $v;
+        }
+        return $out;
+    }
+}
+if (!function_exists('has_header')) {
+    function has_header($headers, $needle) {
+        $needle = strtolower($needle);
+        foreach ($headers as $hline) {
+            $name = strtolower(trim(explode(':', $hline, 2)[0] ?? ''));
+            if ($name === $needle) return true;
+        }
+        return false;
+    }
+}
+if (!function_exists('ensure_content_type')) {
+    function ensure_content_type(&$headers, $contentType) {
+        if (!$contentType) return;
+        if (!has_header($headers, 'content-type')) {
+            $headers[] = 'Content-Type: ' . $contentType;
+        }
+    }
+}
+if (!function_exists('build_chat_json_body')) {
+	function build_chat_json_body($model, $numCtx, $temperature = 0.7) {
+		$model = (string)$model;
+		$numCtx = max(1, (int)$numCtx);
+		return json_encode([
+			'model' => $model !== '' ? $model : 'openai/gpt-oss-20b',
+			'stream' => false,
+			'temperature' => $temperature,
+			'messages' => [
+				[ 'role' => 'system', 'content' => 'You are a helpful assistant that replies in English.' ],
+				[ 'role' => 'user', 'content' => 'Hello' ],
+			],
+			'options' => [
+				'num_ctx' => $numCtx,
+			],
+			'tags' => [ 'lang' => 'en', 'source' => 'php_mc' ],
+		], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+	}
+}
 
 $chat_json =  __DIR__ . '/private/codewalker.json';
 $db_chat =  __DIR__ . '/private/db/chat.db';
 
-// Simple API Test Console for admin use
-// Provides: custom URL, method, headers, body (JSON/form/raw), full response output, and optional DB logging.
+// Prefill sources (env + codewalker config)
+$prefill = [
+    'base_url' => null,
+    'api_key' => null,
+    'model' => null,
+    'timeout' => 60,
+    'max_filesize_kb' => 5 * 1024, // 5 MB default
+    'max_context_size' => null,
+];
 
-@session_start();
+$cfg = [];
 
-// ---- Helpers ----
-function h($v) { return htmlspecialchars((string)$v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
-function is_json($str) {
-		if (!is_string($str) || $str === '') return false;
-		json_decode($str);
-		return json_last_error() === JSON_ERROR_NONE;
-}
-function pretty_json($str) {
-		$decoded = json_decode($str, true);
-		if (json_last_error() !== JSON_ERROR_NONE) return $str;
-		return json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-}
-function normalize_newlines($s) { return str_replace(["\r\n", "\r"], "\n", $s); }
-function parse_headers_input($text) {
-		$headers = [];
-		$text = normalize_newlines((string)$text);
-		foreach (explode("\n", $text) as $line) {
-				$line = trim($line);
-				if ($line === '' || strpos($line, ':') === false) continue;
-				// Preserve original case and spacing around ':'
-				$parts = explode(':', $line, 2);
-				$name = trim($parts[0]);
-				$value = trim($parts[1]);
-				if ($name !== '') $headers[] = $name . ': ' . $value;
+// Lightweight .env parser (KEY=VALUE, ignores comments) - keeps values in memory only.
+(function() use (&$prefill) {
+    $envFile = __DIR__ . '/private/.env';
+    if (!is_readable($envFile)) return;
+    $lines = @file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if (!$lines) return;
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '' || $line[0] === '#') continue;
+        $eq = strpos($line, '=');
+        if ($eq === false) continue;
+        $k = trim(substr($line, 0, $eq));
+        $v = trim(substr($line, $eq+1));
+        if ($k === 'LLM_BASE_URL') $prefill['base_url'] = rtrim($v, '/');
+        elseif ($k === 'LLM_API_KEY') $prefill['api_key'] = $v;
+		elseif ($k === 'LLM_MODEL') $prefill['model'] = $v;
+		elseif (in_array($k, ['LLM_NUM_CTX','LLM_CONTEXT_TOKENS','LLM_MAX_TOKENS','LLM_MAX_CONTEXT'], true)) {
+			$prefill['max_context_size'] = max(1, (int)$v);
+		} elseif (in_array($k, ['OPENAI_NUM_CTX','OPENAI_MAX_TOKENS','OPENAI_CONTEXT_TOKENS'], true) && empty($prefill['max_context_size'])) {
+			$prefill['max_context_size'] = max(1, (int)$v);
+		} elseif ($k === 'OLLAMA_NUM_CTX' && empty($prefill['max_context_size'])) {
+			$prefill['max_context_size'] = max(1, (int)$v);
 		}
-		return $headers;
-}
-function kv_text_to_array($text) {
-		$out = [];
-		$text = normalize_newlines((string)$text);
-		foreach (explode("\n", $text) as $line) {
-				$line = trim($line);
-				if ($line === '' || $line[0] === '#') continue; // allow comments with '#'
-				$eq = strpos($line, '=');
-				if ($eq === false) { $out[$line] = ''; continue; }
-				$k = trim(substr($line, 0, $eq));
-				$v = trim(substr($line, $eq+1));
-				$out[$k] = $v;
+    }
+})();
+
+// Load codewalker.json to capture model/context defaults if not provided in .env
+if (is_readable($chat_json)) {
+	$raw = @file_get_contents($chat_json);
+	if ($raw !== false) {
+		$decoded = json_decode($raw, true);
+		if (is_array($decoded)) {
+			$cfg = $decoded;
+			if (!$prefill['model'] && !empty($cfg['model'])) {
+				$prefill['model'] = (string)$cfg['model'];
+			}
+			if (isset($cfg['max_filesize_kb'])) {
+				$prefill['max_filesize_kb'] = max(1, (int)$cfg['max_filesize_kb']);
+			}
+			$contextKeys = ['max_context_size','max_context_tokens','context_tokens','num_ctx','num_ctx_tokens','max_tokens'];
+			foreach ($contextKeys as $contextKey) {
+				if (isset($cfg[$contextKey]) && $cfg[$contextKey] !== '') {
+					$prefill['max_context_size'] = max(1, (int)$cfg[$contextKey]);
+					break;
+				}
+			}
+			if (empty($prefill['max_context_size']) && isset($cfg['max_filesize_kb'])) {
+				// As a last resort, reuse max_filesize_kb (treating the numeric value as the desired context size)
+				$prefill['max_context_size'] = max(1, (int)$cfg['max_filesize_kb']);
+			}
 		}
-		return $out;
+	}
 }
-function has_header($headers, $needle) {
-		$needle = strtolower($needle);
-		foreach ($headers as $hline) {
-				$name = strtolower(trim(explode(':', $hline, 2)[0] ?? ''));
-				if ($name === $needle) return true;
-		}
-		return false;
+
+// Derive endpoint from base_url (assume OpenAI-compatible /v1/chat/completions OR /v1/chat) heuristics
+if ($prefill['base_url']) {
+    // Prefer /v1/chat if user already typed a URL we'll not override (handled later).
+    $prefill['url'] = $prefill['base_url'] . '/v1/chat';
 }
-function ensure_content_type(&$headers, $contentType) {
-		if (!$contentType) return;
-		if (!has_header($headers, 'content-type')) {
-				$headers[] = 'Content-Type: ' . $contentType;
-		}
-}
+
+// Build Authorization header template
+$prefill['auth_header'] = $prefill['api_key'] ? 'Authorization: Bearer ' . $prefill['api_key'] : '';
+
+// Provide a default JSON body including model if available
+$prefill['json_body'] = build_chat_json_body($prefill['model'] ?? 'openai/gpt-oss-20b', $prefill['max_context_size'] ?? 4096);
+
 
 // CSRF token
 if (empty($_SESSION['csrf_api_console'])) {
-		$_SESSION['csrf_api_console'] = bin2hex(random_bytes(16));
+    $_SESSION['csrf_api_console'] = bin2hex(random_bytes(16));
 }
 $csrf = $_SESSION['csrf_api_console'];
 
 // Defaults
-$defaultUrl = isset($_GET['url']) ? (string)$_GET['url'] : 'https://127.0.0.1:5000/v1/chat';
+$defaultUrl = isset($_GET['url']) ? (string)$_GET['url'] : $prefill['url'];
 $defaultMethod = isset($_GET['method']) ? (string)$_GET['method'] : 'POST';
 $defaultBodyFormat = isset($_GET['body_format']) ? (string)$_GET['body_format'] : 'json'; // json|form|raw
-$defaultHeaders = isset($_GET['headers']) ? (string)$_GET['headers'] : "";
-$defaultJsonBody = isset($_GET['json']) ? (string)$_GET['json'] : "{\n  \"messages\": [\n    { \"role\": \"user\", \"content\": \"Hello\" }\n  ]\n}";
+$defaultHeaders = isset($_GET['headers']) ? (string)$_GET['headers'] : $prefill['auth_header'];
+$defaultJsonBody = isset($_GET['json']) ? (string)$_GET['json'] : $prefill['json_body'];
 $defaultFormBody = isset($_GET['form']) ? (string)$_GET['form'] : "key1=value1\nkey2=value2";
 $defaultRawBody  = isset($_GET['raw']) ? (string)$_GET['raw'] : '';
-$defaultTimeout  = isset($_GET['timeout']) ? (int)$_GET['timeout'] : 60;
+$defaultTimeout  = isset($_GET['timeout']) ? (int)$_GET['timeout'] : $prefill['timeout'];
 
 // Load from saved log for re-run
 $loadData = null;
@@ -115,10 +223,12 @@ $result = null; // will hold execution results
 $saveResultMsg = null;
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['run_test'])) {
-		// Basic CSRF check
-		if (!isset($_POST['csrf']) || !hash_equals($csrf, (string)$_POST['csrf'])) {
-				$result = [ 'error' => 'Invalid CSRF token.' ];
-		} else {
+    // Basic CSRF check
+    if (!isset($_POST['csrf'])) {
+        $result = ['error' => 'Missing CSRF token.'];
+    } elseif (!hash_equals($csrf, (string)$_POST['csrf'])) {
+        $result = ['error' => 'Invalid CSRF token.'];
+    } else {
 				$url = trim((string)($_POST['url'] ?? $defaultUrl));
 				$method = strtoupper(trim((string)($_POST['method'] ?? 'POST')));
 				$bodyFormat = (string)($_POST['body_format'] ?? 'json');
@@ -164,8 +274,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['run_test'])) 
 				// Execute HTTP request via cURL
 				$ch = curl_init();
 				$responseHeaders = '';
+				$responseChunks = [];
 				curl_setopt($ch, CURLOPT_URL, $url);
-				curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+				curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
 				curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 				curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
 				curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, min(10, $timeout));
@@ -175,6 +286,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['run_test'])) 
 				curl_setopt($ch, CURLOPT_HEADERFUNCTION, function($ch, $header) use (&$responseHeaders) {
 						$responseHeaders .= $header;
 						return strlen($header);
+				});
+				$chunkStart = microtime(true);
+				curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $chunk) use (&$responseChunks, $chunkStart) {
+						$now = microtime(true);
+						$responseChunks[] = [
+							'offset' => $now - $chunkStart,
+							'size' => strlen($chunk),
+							'data' => $chunk,
+						];
+						return strlen($chunk);
 				});
 
 				// Method and body
@@ -194,12 +315,20 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['run_test'])) 
 				if (!empty($headers)) curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
 				$start = microtime(true);
-				$responseBody = curl_exec($ch);
+				$curlSuccess = curl_exec($ch);
 				$end = microtime(true);
 				$curlErrNo = curl_errno($ch);
 				$curlError = $curlErrNo ? curl_error($ch) : '';
 				$info = curl_getinfo($ch);
 				curl_close($ch);
+				$responseBody = '';
+				if ($responseChunks) {
+						foreach ($responseChunks as $chunk) {
+							$responseBody .= $chunk['data'];
+						}
+				} elseif (is_string($curlSuccess)) {
+						$responseBody = $curlSuccess;
+				}
 
 				$statusCode = (int)($info['http_code'] ?? 0);
 				$duration = ($end - $start);
@@ -216,6 +345,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['run_test'])) 
 						'curl_errno' => $curlErrNo,
 						'curl_error' => $curlError,
 						'curl_info' => $info,
+						'chunks' => array_map(function($chunk) {
+							return [
+								'offset_ms' => $chunk['offset'] * 1000,
+								'size' => $chunk['size'],
+								'data' => $chunk['data'],
+							];
+						}, $responseChunks),
 						'duration' => $duration,
 				];
 
@@ -299,6 +435,88 @@ if (isset($_GET['view'])) {
 		}
 }
 
+// Extend prefill to hold multiple endpoints
+$endpoints = [];
+
+// Parse env again for broad patterns (keeping prior parsing — could be unified but kept small for clarity)
+(function() use (&$endpoints) {
+    $envFile = __DIR__ . '/private/.env';
+    if (!is_readable($envFile)) return;
+    $lines = @file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if (!$lines) return;
+    $data = [];
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '' || $line[0] === '#') continue;
+        $eq = strpos($line, '=');
+        if ($eq === false) continue;
+        $k = trim(substr($line, 0, $eq));
+        $v = trim(substr($line, $eq+1));
+        $data[$k] = $v;
+    }
+    // Detect groups
+    // OPENAI_* (assume standard api.openai.com style base)
+    if (!empty($data['OPENAI_API_KEY'])) {
+        $base = !empty($data['OPENAI_BASE_URL']) ? rtrim($data['OPENAI_BASE_URL'], '/') : 'https://api.openai.com';
+        $model = !empty($data['OPENAI_MODEL']) ? $data['OPENAI_MODEL'] : (!empty($data['LLM_MODEL']) ? $data['LLM_MODEL'] : 'gpt-4o');
+        $endpoints[] = [
+            'id' => 'openai',
+            'label' => 'OpenAI (' . $model . ')',
+            'url' => $base . '/v1/chat/completions',
+            'auth_header' => 'Authorization: Bearer ' . $data['OPENAI_API_KEY'],
+            'model' => $model,
+            'kind' => 'openai'
+        ];
+    }
+    // LLM_ (local LM Studio style)
+    if (!empty($data['LLM_BASE_URL'])) {
+        $model = !empty($data['LLM_MODEL']) ? $data['LLM_MODEL'] : 'openai/gpt-oss-20b';
+        $endpoints[] = [
+            'id' => 'lmstudio',
+            'label' => 'LM Studio (' . $model . ')',
+            'url' => rtrim($data['LLM_BASE_URL'], '/') . '/v1/chat',
+            'auth_header' => !empty($data['LLM_API_KEY']) ? 'Authorization: Bearer ' . $data['LLM_API_KEY'] : '',
+            'model' => $model,
+            'kind' => 'openai'
+        ];
+    }
+    // OLLAMA_ (ollama host) — uses /api/chat or /v1/chat? We'll choose /v1/chat for OpenAI-compatible proxies if present.
+    if (!empty($data['OLLAMA_HOST'])) {
+        $model = !empty($data['OLLAMA_MODEL']) ? $data['OLLAMA_MODEL'] : 'llama3';
+        $ollamaBase = rtrim($data['OLLAMA_HOST'], '/');
+        // Heuristic: prefer /v1/chat if some proxy is used; else fall back to local /api/chat
+        $url = $ollamaBase . '/api/chat';
+        $endpoints[] = [
+            'id' => 'ollama',
+            'label' => 'Ollama (' . $model . ')',
+            'url' => $url,
+            'auth_header' => '',
+            'model' => $model,
+            'kind' => 'ollama'
+        ];
+    }
+})();
+
+// Choose default endpoint (first in list) if no URL provided via GET
+$selectedEndpointId = isset($_POST['endpoint']) ? (string)$_POST['endpoint'] : (isset($_GET['endpoint']) ? (string)$_GET['endpoint'] : null);
+$endpointMap = [];
+foreach ($endpoints as $ep) { $endpointMap[$ep['id']] = $ep; }
+if ($selectedEndpointId && isset($endpointMap[$selectedEndpointId])) {
+    $activeEp = $endpointMap[$selectedEndpointId];
+} else {
+    $activeEp = $endpoints ? $endpoints[0] : null;
+}
+
+// If we have an active endpoint and no explicit GET url override, set prefill accordingly (but don't stomp existing user GET params already parsed earlier)
+if ($activeEp) {
+    if (empty($_GET['url'])) $prefill['url'] = $activeEp['url'];
+    if (empty($_GET['headers']) && $activeEp['auth_header']) $prefill['auth_header'] = $activeEp['auth_header'];
+    // Ensure JSON body model matches chosen endpoint if user hasn't overridden it via GET
+    if (empty($_GET['json'])) {
+		$prefill['json_body'] = build_chat_json_body($activeEp['model'], $prefill['max_context_size'] ?? 4096);
+    }
+}
+
 ?>
 <!doctype html>
 <html lang="en">
@@ -336,10 +554,55 @@ if (isset($_GET['view'])) {
 			document.getElementById('body_form').style.display = (fmt === 'form') ? 'block' : 'none';
 			document.getElementById('body_raw').style.display  = (fmt === 'raw')  ? 'block' : 'none';
 		}
+		function applyEndpointOption(opt) {
+			if (!opt) return;
+			var urlEl = document.getElementById('url');
+			var headersEl = document.getElementById('headers');
+			var jsonEl = document.getElementById('json_body');
+			var newUrl = opt.getAttribute('data-url');
+			var newAuth = opt.getAttribute('data-auth');
+			var newModel = opt.getAttribute('data-model');
+			// Only replace URL if blank or unchanged from previous selected endpoint
+			if (urlEl && (urlEl.value.trim() === '' || urlEl.dataset.autofill === '1')) {
+				urlEl.value = newUrl;
+				urlEl.dataset.autofill = '1';
+			}
+			// Only set Authorization if field does not already contain a non-matching Authorization
+			if (headersEl && newAuth) {
+				var hVal = headersEl.value.trim();
+				if (hVal === '' || headersEl.dataset.autofill === '1') {
+					headersEl.value = newAuth + (hVal ? '\n' + hVal : '');
+					headersEl.dataset.autofill = '1';
+				}
+			}
+			// Replace model inside JSON body if it contains a model field and was autofilled
+			if (jsonEl && newModel) {
+				var body = jsonEl.value;
+				if (jsonEl.dataset.autofill === '1') {
+					body = body.replace(/"model"\s*:\s*"[^"]+"/, '"model": "' + newModel + '"');
+					jsonEl.value = body;
+				}
+			}
+		}
 		document.addEventListener('DOMContentLoaded', function() {
 			var sel = document.getElementById('body_format');
 			if (sel) switchBodyFormat(sel.value);
-			sel.addEventListener('change', function(){ switchBodyFormat(sel.value); });
+			if (sel) sel.addEventListener('change', function(){ switchBodyFormat(sel.value); });
+			var epSel = document.getElementById('endpoint');
+			if (epSel) {
+				// Mark initial autofill state
+				var urlEl = document.getElementById('url');
+				var headersEl = document.getElementById('headers');
+				var jsonEl = document.getElementById('json_body');
+				if (urlEl && urlEl.value) urlEl.dataset.autofill = '1';
+				if (headersEl && headersEl.value) headersEl.dataset.autofill = '1';
+				if (jsonEl && jsonEl.value) jsonEl.dataset.autofill = '1';
+				epSel.addEventListener('change', function() { applyEndpointOption(epSel.options[epSel.selectedIndex]); });
+			}
+			['url','headers','json_body'].forEach(function(id){
+				var el = document.getElementById(id);
+				if (el) el.addEventListener('input', function(){ delete el.dataset.autofill; });
+			});
 		});
 	</script>
 </head>
@@ -379,8 +642,22 @@ if (isset($_GET['view'])) {
 
 		<div class="row">
 			<label for="headers" class="w-100">Headers (one per line: Name: Value)</label>
+			<!-- Note: The Authorization header (if prefilled) comes from /private/.env. Editing it here only affects this request unless you save the log. Avoid pasting long-term secrets into saved logs if logs may be shared. -->
 			<textarea id="headers" name="headers" rows="4" placeholder="Authorization: Bearer sk-...\nContent-Type: application/json"><?php echo h($defaultHeaders); ?></textarea>
 		</div>
+
+		<div class="row">
+            <label for="endpoint" class="w-100">Endpoint Preset</label>
+            <select id="endpoint" name="endpoint">
+                <?php foreach ($endpoints as $ep): $sel = ($activeEp && $activeEp['id'] === $ep['id']) ? 'selected' : ''; ?>
+                    <option value="<?php echo h($ep['id']); ?>" data-url="<?php echo h($ep['url']); ?>" data-auth="<?php echo h($ep['auth_header']); ?>" data-model="<?php echo h($ep['model']); ?>" <?php echo $sel; ?>><?php echo h($ep['label']); ?></option>
+                <?php endforeach; ?>
+                <?php if (!$endpoints): ?>
+                    <option value="" selected disabled>No .env endpoints detected</option>
+                <?php endif; ?>
+            </select>
+            <small class="muted">Select an environment-defined endpoint or type a custom URL below. Switching updates empty URL/headers/model fields.</small>
+        </div>
 
 		<div class="grid">
 			<div>
@@ -395,7 +672,6 @@ if (isset($_GET['view'])) {
 					?>
 				</select>
 			</div>
-			<div></div>
 		</div>
 
 		<div id="body_json" style="display:none;">
@@ -476,6 +752,15 @@ if (isset($_GET['view'])) {
 						</div>
 					</div>
 				</details>
+				<?php if (!empty($result['chunks'])): ?>
+				<details>
+					<summary>Response chunks (<?php echo count($result['chunks']); ?>)</summary>
+					<pre class="mh-200"><code class="block"><?php foreach ($result['chunks'] as $idx => $chunk): ?>[<?php echo str_pad((string)($idx + 1), 2, '0', STR_PAD_LEFT); ?>] +<?php echo number_format((float)$chunk['offset_ms'], 1); ?> ms (<?php echo (int)$chunk['size']; ?> bytes)
+<?php echo h($chunk['data']); ?>
+
+<?php endforeach; ?></code></pre>
+				</details>
+				<?php endif; ?>
 				<details>
 					<summary>cURL Info <?php echo $result['curl_errno'] ? '(errors present)' : ''; ?></summary>
 					<?php if ($result['curl_errno']): ?>
@@ -577,4 +862,3 @@ if (isset($_GET['view'])) {
 
 </body>
 </html>
-?>
