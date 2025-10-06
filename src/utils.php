@@ -88,7 +88,7 @@ if (!function_exists('render_nav_menu')) {
      * @param string|null $menuFile    Optional override for the menu definition path.
      */
     function render_nav_menu(?string $currentFile = null, ?string $menuFile = null): string {
-        $menuFile = $menuFile ?: __DIR__ . '/mc_menu.json';
+        $menuFile = $menuFile ?: __DIR__ . '/private/mc_menu.json';
 
         if ($currentFile === null) {
             $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
