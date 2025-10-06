@@ -115,6 +115,7 @@ try {
     exit;
 }
 
+
 // Ensure applied_rewrites table exists
 $pdo->exec("CREATE TABLE IF NOT EXISTS applied_rewrites (
   action_id INTEGER PRIMARY KEY,
@@ -513,17 +514,19 @@ elseif ($view === 'queue') {
     if ($pre_add && $pre_path!=='') {
         echo '<form method="post" style="margin-bottom:1rem">';
         echo '<input type="hidden" name="csrf" value="'.h($csrf).'">';
-        echo '<input type="hidden" name="op" value="queue_add">';
-        echo '<label>Path</label><input type="text" name="path" value="'.h($pre_path).'">';
-        echo '<label>Notes (optional)</label><input type="text" name="notes" placeholder="why/priority">';
-        echo '<div style="margin-top:.5rem"><button class="btn good" type="submit">Add to queue</button></div>';
+    echo '<input type="hidden" name="op" value="queue_add">';
+    echo '<label>Path</label><input type="text" name="path" value="'.h($pre_path).'">';
+    echo '<label>Prompt override (optional)</label><textarea name="notes" rows="3" placeholder="Give the AI specific instructions for this file" spellcheck="false"></textarea>';
+    echo '<div style="margin-top:.25rem;color:var(--mut);font-size:.85rem">When present, this text is sent as the first prompt to the AI for this queued item.</div>';
+    echo '<div style="margin-top:.5rem"><button class="btn good" type="submit">Add to queue</button></div>';
         echo '</form>';
     }
     $rows = $pdo->query('SELECT * FROM queued_files ORDER BY id DESC LIMIT 300')->fetchAll();
     echo '<table class="table"><tr><th>ID</th><th>Path</th><th>Status</th><th>Requested</th><th>Notes</th><th colspan="3"></th></tr>';
     foreach ($rows as $r) {
         $mc_link = 'index.php?dir='.urlencode(dirname($r['path'])).'&view=true&tpage='.urlencode($r['path']).'&filename='.urlencode(basename($r['path']));
-        echo '<tr><td>'.(int)$r['id'].'</td><td style="max-width:700px">'.h($r['path']).' <a class="badge" href="'.$mc_link.'">MC</a></td><td>'.h($r['status']).'</td><td>'.h($r['requested_at']).'</td><td>'.h($r['notes']).'</td>';
+    $note_cell = $r['notes'] !== '' ? '<pre style="margin:0;white-space:pre-wrap">'.h($r['notes']).'</pre>' : '';
+    echo '<tr><td>'.(int)$r['id'].'</td><td style="max-width:700px">'.h($r['path']).' <a class="badge" href="'.$mc_link.'">MC</a></td><td>'.h($r['status']).'</td><td>'.h($r['requested_at']).'</td><td>'.$note_cell.'</td>';
         echo '<td><form method="post"><input type="hidden" name="csrf" value="'.h($csrf).'"><input type="hidden" name="op" value="queue_mark"><input type="hidden" name="id" value="'.(int)$r['id'].'"><input type="hidden" name="status" value="done"><button class="btn" type="submit">Mark done</button></form></td>';
         echo '<td><a class="btn" href="?view=file&path='.urlencode($r['path']).'">File</a></td>';
         echo '<td><form method="post" onsubmit="return confirm(\'Delete this queue entry?\')"><input type="hidden" name="csrf" value="'.h($csrf).'"><input type="hidden" name="op" value="queue_delete"><input type="hidden" name="id" value="'.(int)$r['id'].'"><button class="btn bad" type="submit">Delete</button></form></td></tr>';

@@ -315,14 +315,17 @@ def db_get_or_create_file(conn: sqlite3.Connection, path: str, ext: str, hsh: st
     return cur.lastrowid
 
 
-def db_get_pending_queue_paths(conn: sqlite3.Connection) -> list[str]:
-    """Return pending queued file paths (deduped, order by id)."""
+def db_get_pending_queue_paths(conn: sqlite3.Connection) -> list[tuple[str, str]]:
+    """Return pending queued file paths with their notes (deduped, order by id)."""
     try:
-        rows = conn.execute("SELECT path FROM queued_files WHERE status='pending' ORDER BY id ASC").fetchall()
-        paths = []
+        rows = conn.execute(
+            "SELECT path, COALESCE(notes, '') AS notes FROM queued_files WHERE status='pending' ORDER BY id ASC"
+        ).fetchall()
+        entries: list[tuple[str, str]] = []
         seen = set()
         for row in rows:
             p = row[0]
+            note = (row[1] or "") if len(row) > 1 else ""
             if not isinstance(p, str):
                 continue
             ap = os.path.abspath(p)
@@ -330,8 +333,8 @@ def db_get_pending_queue_paths(conn: sqlite3.Connection) -> list[str]:
                 continue
             seen.add(ap)
             if os.path.isfile(p):
-                paths.append(p)
-        return paths
+                entries.append((p, str(note)))
+        return entries
     except Exception:
         return []
 
@@ -610,16 +613,25 @@ def run_once(cfg: dict) -> None:
     try:
         limit = int(cfg.get("limit_per_run") or 50)
         mode = str(cfg.get("mode") or "cron").strip().lower()
+        queue_entries = db_get_pending_queue_paths(conn)
+        queue_paths = [entry[0] for entry in queue_entries]
+        queue_note_map: dict[str, str] = {}
+        for path, note in queue_entries:
+            clean = (note or "").strip()
+            if not clean:
+                continue
+            queue_note_map[path] = clean
+            queue_note_map[os.path.abspath(path)] = clean
+
         if mode in ("que", "queue", "queue-only", "queued"):
             # Process only queued files
-            candidates = db_get_pending_queue_paths(conn)
+            candidates = queue_paths
         else:
             # Scan directories as usual, but prioritize queued first
             candidates = gather_candidates(cfg)
-            queued_paths = db_get_pending_queue_paths(conn)
-            if queued_paths:
-                seen = set(os.path.abspath(p) for p in queued_paths)
-                prioritized = queued_paths[:]
+            if queue_paths:
+                seen = set(os.path.abspath(p) for p in queue_paths)
+                prioritized = queue_paths[:]
                 for p in candidates:
                     ap = os.path.abspath(p)
                     if ap not in seen:
@@ -651,16 +663,28 @@ def run_once(cfg: dict) -> None:
                 # Build prompts
                 file_meta = f"File: {path}\nExt: {ext}\nSize: {len(full_bytes)} bytes\nLastModified: {human_ts(os.path.getmtime(path))}\n"
 
+                queue_note = queue_note_map.get(path) or queue_note_map.get(os.path.abspath(path))
+
                 if action == "summarize":
-                    messages = [
-                        {"role": "system", "content": SUMMARIZE_INSTR},
-                        {"role": "user", "content": file_meta + "\nCONTENT:\n```" + ext + "\n" + payload + "\n```"},
-                    ]
                     prompt_used = SUMMARIZE_INSTR
+                    if queue_note:
+                        prompt_used = f"{prompt_used}\n\nQueue note:\n{queue_note}"
+                    user_content_parts = []
+                    if queue_note:
+                        user_content_parts.append(f"Queue note:\n{queue_note}")
+                    user_content_parts.append(file_meta + "\nCONTENT:\n```" + ext + "\n" + payload + "\n```")
+                    messages = [
+                        {"role": "system", "content": prompt_used},
+                        {"role": "user", "content": "\n\n".join(user_content_parts)},
+                    ]
                 else:
                     prompts = load_prompt_list(cfg)
-                    chosen = random.choice(prompts) if prompts else (cfg.get("rewrite_prompt") or "Make this code more readable and modular.")
-                    logging.info("Using rewrite prompt: %s", chosen)
+                    if queue_note:
+                        chosen = queue_note
+                        logging.info("Using queue note for rewrite: %s", queue_note)
+                    else:
+                        chosen = random.choice(prompts) if prompts else (cfg.get("rewrite_prompt") or "Make this code more readable and modular.")
+                        logging.info("Using rewrite prompt: %s", chosen)
                     prompt_used = f"{REWRITE_INSTR_PREFIX} {chosen}".strip()
                     #logging.info("Using rewrite prompt: %s", prompt_used)
                     safe_payload = payload.replace("```", "``\\`")
