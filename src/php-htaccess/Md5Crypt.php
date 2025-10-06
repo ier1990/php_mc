@@ -180,8 +180,10 @@ class Md5Crypt2
      */
     protected static function finalTransform(string $final): string
     {
-        // Helper to convert three bytes into four base64 chars.
-        $to64 = self::to64(...);
+        // Helper to convert three bytes into four base64 chars (PHP 7.4 compatible).
+        $to64 = static function (int $value, int $count): string {
+            return self::to64($value, $count);
+        };
 
         // Build the 22‑character string in the order specified by the algorithm.
         return
