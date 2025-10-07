@@ -64,6 +64,15 @@ APP_NAME = "CodeWalker"
 VERSION = "1.0.0"
 
 
+# Paths
+# APP_ROOT = /php_mc/ 
+# APP_DIR = /php_mc/src/
+# SCRIPTS_DIR = /php_mc/src/private/scripts/
+current_dir = os.path.dirname(os.path.abspath(__file__))
+scripts_dir = os.path.dirname(current_dir)
+root_dir = os.path.dirname(os.path.dirname(scripts_dir))
+
+
 # ---------------------- Config ----------------------
 CONFIG_TEMPLATE = {
     "name": "CodeWalker",

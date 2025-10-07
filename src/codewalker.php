@@ -112,6 +112,7 @@ try {
 } catch (Throwable $e) {
     http_response_code(500);
     echo '<h1>Cannot open SQLite DB</h1><p>Path: '.h($DB_PATH).'</p><pre>'.h($e->getMessage()).'</pre>';
+    echo '<p>Run script <source>/src/private/scripts/codewalker.py</source> to create and populate the DB.</p>';
     exit;
 }
 
