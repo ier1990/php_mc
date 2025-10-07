@@ -1,0 +1,40 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Pull master (deploy)",
+      "type": "shell",
+      "command": "./scripts/pull_master.sh",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Push master (quick)",
+      "type": "shell",
+      "command": "./scripts/push_master.sh",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "PHP: Lint staged",
+      "type": "shell",
+      "command": "./scripts/php-lint.sh staged",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "PHP: Lint repo (PHP 7.4 via Docker)",
+      "type": "shell",
+      "command": "DOCKER=7.4 ./scripts/php-lint.sh all",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Docker: Check & Pull",
+      "type": "shell",
+      "command": "./scripts/docker-check.sh",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    }
+  ]
+}

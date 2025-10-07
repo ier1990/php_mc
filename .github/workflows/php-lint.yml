@@ -2,28 +2,44 @@ name: php-lint
 
 on:
   push:
+    paths-ignore:
+      - '**/*.md'
   pull_request:
+    paths-ignore:
+      - '**/*.md'
 
 permissions:
   contents: read
 
+concurrency:
+  group: php-lint-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
-    name: PHP lint
+    name: PHP lint (${{ matrix.php }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        php: [ '7.4', '8.2' ]
+        php: ['7.4', '8.2']
     steps:
       - uses: actions/checkout@v4
+
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-      - name: Lint PHP files
+          coverage: none
+
+      - name: Lint tracked PHP files (skip vendor/old/runtime)
         run: |
           set -euo pipefail
-          find . \
-            -type d \( -path './vendor' -o -path './old' \) -prune -o \
-            -type f -name '*.php' -print0 \
-          | xargs -0 -n1 php -l
+          FILES="$(git ls-files '*.php' \
+            ':(exclude)vendor/**' \
+            ':(exclude)old/**' \
+            ':(exclude)src/private/db/**' \
+            ':(exclude)src/private/logs/**')"
+          if [ -z "$FILES" ]; then
+            echo "No PHP files to lint."; exit 0
+          fi
+          echo "$FILES" | while read -r f; do php -n -l "$f"; done

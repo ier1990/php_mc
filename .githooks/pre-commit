@@ -1,11 +1,45 @@
 #!/usr/bin/env bash
-set -e
-CHANGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.php$' || true)
-[ -z "$CHANGED" ] && exit 0
-echo "PHP lint on staged files..."
-ok=1
-while IFS= read -r f; do
-  php -l "$f" || ok=0
-done <<< "$CHANGED"
-[ "$ok" -eq 1 ] || { echo "✗ Lint failed"; exit 1; }
-echo "✓ Lint passed"
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+# Build NUL-delimited list of staged PHP files (exclude legacy/runtime/vendor)
+php_staged() {
+  git diff --cached --name-only -z --diff-filter=ACM -- '*.php' \
+    ':(exclude)old/**' ':(exclude)vendor/**' \
+    ':(exclude)src/private/db/**' ':(exclude)src/private/logs/**'
+}
+
+# If we have the project linter script, use it; else fallback to a tiny loop.
+if [[ -x ./scripts/php-lint.sh ]]; then
+  ./scripts/php-lint.sh staged || { echo "✗ PHP lint failed"; exit 1; }
+  # Optional: also lint staged with PHP 7.4 via Docker (uncomment to enable)
+  # DOCKER=7.4 ./scripts/php-lint.sh staged || { echo "✗ PHP 7.4 lint failed"; exit 1; }
+else
+  echo "PHP lint on staged files (fallback)..."
+  ok=1
+  while IFS= read -r -d '' f; do
+    php -n -l "$f" || ok=0
+  done < <(php_staged)
+  [[ "$ok" -eq 1 ]] || { echo "✗ PHP lint failed"; exit 1; }
+fi
+
+# Optional: compile staged Python files (skip legacy)
+CHANGED_PY=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.py$' | grep -v '^old/' || true)
+if [[ -n "$CHANGED_PY" ]]; then
+  echo "Python compile on staged files..."
+  ok=1; while read -r f; do python3 -m py_compile "$f" || ok=0; done <<<"$CHANGED_PY"
+  [[ "$ok" -eq 1 ]] || { echo "✗ Python compile failed"; exit 1; }
+fi
+
+# Optional: validate prompts.json if changed (requires jq)
+if command -v jq >/dev/null 2>&1; then
+  if git diff --cached --name-only | grep -qx "src/prompts.json"; then
+    echo "Validating src/prompts.json…"
+    jq -e '.prompts and (.prompts | type=="array")' src/prompts.json >/dev/null || {
+      echo "✗ prompts.json missing .prompts array"; exit 1; }
+    jq -e 'all(.prompts[]; has("text"))' src/prompts.json >/dev/null || {
+      echo "✗ each prompt must include a \"text\" field"; exit 1; }
+  fi
+fi
+
+echo "✓ Pre-commit checks passed"
